@@ -340,6 +340,25 @@ app.post('/api/whatsapp/add-channel', async (req, res) => {
   }
 });
 
+// Endpoint de prueba para enviar email
+app.post('/api/test-email', async (req, res) => {
+  try {
+    const { sendEmailApplication } = require('./src/auto-applicant');
+    const profile = loadProfile();
+    const result = await sendEmailApplication({
+      toEmail: req.body.toEmail || 'afernand1995@gmail.com',
+      subject: 'Prueba de email desde Render',
+      bodyText: 'Este es un email de prueba para verificar que el envío funciona en Render.',
+      pdfPath: null,
+      pdfFileName: null,
+      profile
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/whatsapp/send-record/:id', async (req, res) => {
   try {
     const history = loadHistory();
