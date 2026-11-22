@@ -575,6 +575,18 @@ class WhatsAppJobAssistant {
   async sendReadyApplicationToUser(record, targetJidOverride = null) {
     if (!this.sock || this.status !== 'connected') return;
 
+    // Asegurar que el perfil esté disponible (si no, cargarlo)
+    if (!record.profile) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const profilePath = path.join(__dirname, '..', 'data', 'antonella-profile.json');
+        record.profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+      } catch (e) {
+        console.error('Error cargando perfil:', e.message);
+      }
+    }
+
     // Soporta múltiples números separados por coma o el Grupo Exclusivo Empleos Anto (@g.us)
     const rawTargets = targetJidOverride
       ? [targetJidOverride]
@@ -596,11 +608,16 @@ class WhatsAppJobAssistant {
     let waAutoResult = null;
     let emailAutoResult = null;
 
+    console.log(`[AUTO-APPLY] autoApplyEnabled=${this.autoApplyEnabled}, score=${analysis.matchScore}, contactEmail=${job.contactEmail}, contactPhone=${job.contactPhone}, hasProfile=${!!record.profile}`);
+
     if (this.autoApplyEnabled && (analysis.matchScore >= 65 || record.forceAutoApply)) {
       if (job.contactPhone) {
+        console.log(`[AUTO-APPLY] Enviando WhatsApp al reclutador: ${job.contactPhone}`);
         waAutoResult = await this.autoSendWhatsAppToRecruiter(record);
+        console.log(`[AUTO-APPLY] WhatsApp result:`, JSON.stringify(waAutoResult));
       }
       if (job.contactEmail && record.profile) {
+        console.log(`[AUTO-APPLY] Enviando Email al reclutador: ${job.contactEmail}`);
         emailAutoResult = await sendEmailApplication({
           toEmail: job.contactEmail,
           subject: job.emailSubject || msgs.emailSubject || `CV - ${job.title} - Antonella Solange Fernández`,
@@ -609,6 +626,31 @@ class WhatsAppJobAssistant {
           pdfFileName: `CV_Antonella_Solange_Fernandez.pdf`,
           profile: record.profile
         });
+        console.log(`[AUTO-APPLY] Email result:`, JSON.stringify(emailAutoResult));
+      } else if (job.contactEmail && !record.profile) {
+        console.log(`[AUTO-APPLY] No se pudo enviar email: falta perfil`);
+        emailAutoResult = { sent: false, reason: 'Falta perfil de Antonella' };
+      }
+    } else {
+      console.log(`[AUTO-APPLY] Auto-apply desactivado o score < 65% (${analysis.matchScore})`);
+    }
+
+    // Persistir el flag "applied" en el historial
+    if (record.applied) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const HISTORY_PATH = path.join(__dirname, '..', 'data', 'offers-history.json');
+        if (fs.existsSync(HISTORY_PATH)) {
+          const history = JSON.parse(fs.readFileSync(HISTORY_PATH, 'utf8'));
+          const idx = history.findIndex(h => h.id === record.id);
+          if (idx !== -1) {
+            history[idx].applied = true;
+            fs.writeFileSync(HISTORY_PATH, JSON.stringify(history.slice(0, 100), null, 2));
+          }
+        }
+      } catch (e) {
+        console.error('Error persistiendo applied:', e.message);
       }
     }
 

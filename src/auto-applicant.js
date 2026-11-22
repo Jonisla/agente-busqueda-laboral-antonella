@@ -70,14 +70,19 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
 
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: gmailUser,
         pass: gmailPass
-      }
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000
     });
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"${profile.fullName}" <${gmailUser}>`,
       replyTo: 'afernand1995@gmail.com, antonellasolangefernandez095@gmail.com',
       to: cleanEmail,
@@ -95,6 +100,8 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
           : []
     });
 
+    console.log(`[EMAIL] Enviado a ${cleanEmail}, messageId: ${info.messageId}`);
+
     history.emails[cleanEmail] = {
       sentAt: new Date().toISOString(),
       subject
@@ -104,10 +111,11 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
     return {
       sent: true,
       recipient: cleanEmail,
-      subject
+      subject,
+      messageId: info.messageId
     };
   } catch (err) {
-    console.error(`Error enviando email automático a ${cleanEmail}:`, err.message);
+    console.error(`[EMAIL ERROR] ${cleanEmail}: ${err.message}`);
     return {
       sent: false,
       reason: `Error SMTP: ${err.message}`
