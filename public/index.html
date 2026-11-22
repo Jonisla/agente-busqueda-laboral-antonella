@@ -626,10 +626,47 @@
         </div>
 
         <div class="card">
-          <div class="card-title">📡 Canales y Grupos de Bolsa de Trabajo en Buenos Aires</div>
+          <div class="card-title">📡 Canales de WhatsApp de Bolsas de Trabajo (AMBA / CABA / Zona Oeste)</div>
           <p class="card-desc">
-            Activá los grupos o canales detectados en tu cuenta para que el agente los lea automáticamente apenas publiquen una oferta.
+            El bot se suscribe y escucha en tiempo real estos Canales de WhatsApp de empleos de Buenos Aires. También podés pegar el link de cualquier canal nuevo acá o adentro del grupo <strong>Empleos Anto 🤪</strong>:
           </p>
+
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <input type="text" id="newChannelUrlInput" placeholder="Pegá un link https://whatsapp.com/channel/..." />
+            <button class="btn btn-primary" style="width:auto; white-space:nowrap;" onclick="addWhatsAppChannel()">➕ Sumar Canal</button>
+          </div>
+
+          <div style="margin-bottom:16px; background:#0f172a; border:1px solid var(--border); border-radius:10px; padding:12px;">
+            <div style="font-size:0.8rem; font-weight:700; color:var(--primary); margin-bottom:8px;">
+              📢 CANALES DE EMPLEOS DE BUENOS AIRES INTEGRADOS (CABA Y ZONA OESTE):
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:0.82rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>📍 <strong>C.A.O.L. Empleos AMBA Oeste BsAs</strong> (Zona Oeste)</span>
+                <a href="https://whatsapp.com/channel/0029Vb7F3kE7tkjFV8DMI92a" target="_blank" class="preset-chip" style="text-decoration:none;">Abrir Canal</a>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>📍 <strong>Café y RRHH — Empleos Zona Oeste y GBA</strong> (Admin / Atención)</span>
+                <a href="https://whatsapp.com/channel/0029Vb6Jl6JKrWQrPOC1VD2D" target="_blank" class="preset-chip" style="text-decoration:none;">Abrir Canal</a>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>📍 <strong>Búsquedas Laborales CABA y Provincia de BsAs</strong></span>
+                <a href="https://whatsapp.com/channel/0029VbA6KUn0lwgwbmehUA2g" target="_blank" class="preset-chip" style="text-decoration:none;">Abrir Canal</a>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>📍 <strong>Empleos AMBA (CABA y GBA)</strong></span>
+                <a href="https://whatsapp.com/channel/0029VaKrYMRFsn0hi3yTds1Z" target="_blank" class="preset-chip" style="text-decoration:none;">Abrir Canal</a>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>📍 <strong>Avisos de Empleo CABA</strong></span>
+                <a href="https://whatsapp.com/channel/0029VbCr3VUJENy0DD6sk01K" target="_blank" class="preset-chip" style="text-decoration:none;">Abrir Canal</a>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>📍 <strong>CV By Sol | Empleos Argentina (AMBA)</strong></span>
+                <a href="https://whatsapp.com/channel/0029VbCpYbg1Hspteu34Yf1C" target="_blank" class="preset-chip" style="text-decoration:none;">Abrir Canal</a>
+              </div>
+            </div>
+          </div>
 
           <div id="monitoredChatsList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
             <p style="font-size:0.85rem; color:var(--text-muted);">Conectá WhatsApp para ver tus grupos y canales activos.</p>
@@ -1073,6 +1110,28 @@ Enviar CV a talento@gestiondatosba.com con ASUNTO: DATA ENTRY BA`
       });
       const state = await res.json();
       updateWhatsAppUI(state);
+    }
+
+    async function addWhatsAppChannel() {
+      const input = document.getElementById('newChannelUrlInput');
+      const url = input.value.trim();
+      if (!url) {
+        alert('Pegá el link del Canal de WhatsApp (ej: https://whatsapp.com/channel/...)');
+        return;
+      }
+      const res = await fetch('/api/whatsapp/add-channel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert('Error: ' + data.error);
+      } else {
+        input.value = '';
+        updateWhatsAppUI(data.state);
+        alert('✅ Canal agregado y monitoreado en vivo: ' + (data.added?.name || 'Canal WA'));
+      }
     }
 
     async function saveWaConfig() {

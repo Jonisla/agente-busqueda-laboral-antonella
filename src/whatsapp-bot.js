@@ -12,6 +12,44 @@ const {
   makeCacheableSignalKeyStore
 } = require('@whiskeysockets/baileys');
 
+const DEFAULT_BA_CHANNELS = [
+  {
+    name: 'C.A.O.L. Empleos AMBA Oeste BsAs',
+    code: '0029Vb7F3kE7tkjFV8DMI92a',
+    url: 'https://whatsapp.com/channel/0029Vb7F3kE7tkjFV8DMI92a'
+  },
+  {
+    name: 'Café y RRHH (Empleos Zona Oeste y GBA)',
+    code: '0029Vb6Jl6JKrWQrPOC1VD2D',
+    url: 'https://whatsapp.com/channel/0029Vb6Jl6JKrWQrPOC1VD2D'
+  },
+  {
+    name: 'Búsquedas Laborales CABA y PBA',
+    code: '0029VbA6KUn0lwgwbmehUA2g',
+    url: 'https://whatsapp.com/channel/0029VbA6KUn0lwgwbmehUA2g'
+  },
+  {
+    name: 'Empleos AMBA / CABA y GBA',
+    code: '0029VaKrYMRFsn0hi3yTds1Z',
+    url: 'https://whatsapp.com/channel/0029VaKrYMRFsn0hi3yTds1Z'
+  },
+  {
+    name: 'Avisos de Empleo CABA',
+    code: '0029VbCr3VUJENy0DD6sk01K',
+    url: 'https://whatsapp.com/channel/0029VbCr3VUJENy0DD6sk01K'
+  },
+  {
+    name: 'CV By Sol | Empleos Argentina (AMBA)',
+    code: '0029VbCpYbg1Hspteu34Yf1C',
+    url: 'https://whatsapp.com/channel/0029VbCpYbg1Hspteu34Yf1C'
+  },
+  {
+    name: 'Búsquedas HR - Argentina',
+    code: '0029Vb3VL71C1FuHz2YnV02F',
+    url: 'https://whatsapp.com/channel/0029Vb3VL71C1FuHz2YnV02F'
+  }
+];
+
 class WhatsAppJobAssistant {
   constructor({ onOfferDetected }) {
     this.onOfferDetected = onOfferDetected;
@@ -38,16 +76,16 @@ class WhatsAppJobAssistant {
           this.savedMonitoredIds = new Set();
         }
         this.autoMonitorKeywords = raw.autoMonitorKeywords !== false;
-        this.notifyNumber = raw.notifyNumber || '5491165307320, 5491139130073';
+        this.notifyNumber = raw.notifyNumber || '120363415618148219@g.us';
       } else {
-        this.savedMonitoredIds = new Set();
+        this.savedMonitoredIds = new Set(['120363415618148219@g.us']);
         this.autoMonitorKeywords = true;
-        this.notifyNumber = '5491165307320, 5491139130073';
+        this.notifyNumber = '120363415618148219@g.us';
       }
     } catch (e) {
-      this.savedMonitoredIds = new Set();
+      this.savedMonitoredIds = new Set(['120363415618148219@g.us']);
       this.autoMonitorKeywords = true;
-      this.notifyNumber = '5491165307320, 5491139130073';
+      this.notifyNumber = '120363415618148219@g.us';
     }
   }
 
@@ -130,7 +168,8 @@ class WhatsAppJobAssistant {
           name: this.sock.user?.name || 'WhatsApp Conectado'
         };
         console.log('WhatsApp conectado como:', this.connectedUser.id);
-        this.refreshGroups();
+        await this.refreshGroups();
+        this.subscribeDefaultChannels();
       }
 
       if (connection === 'close') {
@@ -193,6 +232,59 @@ class WhatsAppJobAssistant {
     }
   }
 
+  /**
+   * Se suscribe automáticamente a los Canales de WhatsApp de Bolsas de Trabajo de Buenos Aires (AMBA Oeste / CABA)
+   */
+  async subscribeDefaultChannels() {
+    if (!this.sock || this.status !== 'connected') return;
+    for (const ch of DEFAULT_BA_CHANNELS) {
+      try {
+        await this.followChannelByCodeOrUrl(ch.code, ch.name);
+      } catch (e) {
+        console.warn(`No se pudo vincular canal ${ch.name}:`, e.message);
+      }
+    }
+  }
+
+  async followChannelByCodeOrUrl(inputUrlOrCode, fallbackName = 'Canal Empleos BA') {
+    if (!this.sock || this.status !== 'connected') {
+      throw new Error('WhatsApp no está conectado todavía.');
+    }
+    const raw = String(inputUrlOrCode || '').trim();
+    const match = raw.match(/channel\/([A-Za-z0-9]+)/i);
+    const code = match ? match[1] : raw.replace(/[^A-Za-z0-9]/g, '');
+    if (!code) throw new Error('Código de canal inválido.');
+
+    let jid = null;
+    let name = fallbackName;
+
+    if (typeof this.sock.newsletterMetadata === 'function') {
+      const meta = await this.sock.newsletterMetadata('invite', code);
+      jid = meta?.id;
+      name = meta?.thread_metadata?.name?.text || meta?.name || fallbackName;
+    }
+
+    if (jid) {
+      if (typeof this.sock.newsletterFollow === 'function') {
+        try {
+          await this.sock.newsletterFollow(jid);
+        } catch (e) {}
+      }
+      this.savedMonitoredIds.add(jid);
+      this.monitoredChats.set(jid, {
+        id: jid,
+        name: `📢 ${name}`,
+        type: 'channel',
+        url: `https://whatsapp.com/channel/${code}`,
+        enabled: true
+      });
+      this.saveConfig();
+      console.log(`✅ Canal de WhatsApp activo: ${name} (${jid})`);
+      return { id: jid, name, code };
+    }
+    return null;
+  }
+
   toggleChatMonitor(chatId, enabled, name = '') {
     if (enabled) {
       this.savedMonitoredIds.add(chatId);
@@ -249,6 +341,23 @@ class WhatsAppJobAssistant {
       text.includes('POSTULAR POR WHATSAPP (1 CLIC)') ||
       text.includes('Abajo te adjunto el CV en PDF')
     ) {
+      return;
+    }
+
+    // Si en el grupo Empleos Anto pegan un link de Canal de WhatsApp (https://whatsapp.com/channel/...), lo agregamos automáticamente
+    const channelLinkMatch = text.match(/https?:\/\/(?:www\.)?whatsapp\.com\/channel\/([A-Za-z0-9]+)/i);
+    if (channelLinkMatch && (remoteJid.endsWith('@g.us') || msg.key.fromMe)) {
+      try {
+        const added = await this.followChannelByCodeOrUrl(channelLinkMatch[1], 'Nuevo Canal de Empleos');
+        if (added) {
+          const confirmMsg = await this.sock.sendMessage(remoteJid, {
+            text: `✅ *Canal de Bolsa de Trabajo agregado y monitoreado en vivo:*\n📢 *${added.name}*\nApenas publiquen una oferta para Antonella, les mando el CV adaptado acá.`
+          });
+          if (confirmMsg?.key?.id) this.sentMessageIds.add(confirmMsg.key.id);
+        }
+      } catch (e) {
+        console.error('Error agregando canal por link:', e.message);
+      }
       return;
     }
 

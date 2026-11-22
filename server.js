@@ -277,6 +277,16 @@ app.post('/api/whatsapp/config', (req, res) => {
   res.json(waAssistant.getState());
 });
 
+app.post('/api/whatsapp/add-channel', async (req, res) => {
+  try {
+    const { url, name } = req.body;
+    const added = await waAssistant.followChannelByCodeOrUrl(url, name || 'Canal Empleos BA');
+    res.json({ ok: true, added, state: waAssistant.getState() });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.post('/api/whatsapp/send-record/:id', async (req, res) => {
   try {
     const history = loadHistory();

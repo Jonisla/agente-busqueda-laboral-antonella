@@ -1,5 +1,7 @@
 {
-  "monitoredIds": [],
+  "monitoredIds": [
+    "120363415618148219@g.us"
+  ],
   "autoMonitorKeywords": true,
-  "notifyNumber": "5491165307320, 5491139130073"
+  "notifyNumber": "120363415618148219@g.us"
 }
