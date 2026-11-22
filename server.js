@@ -349,6 +349,16 @@ async function runAutomaticRadarCycle() {
 // Ejecutar radar automático cada 30 minutos
 setInterval(runAutomaticRadarCycle, 30 * 60 * 1000);
 
+// Mantener despierto el servidor en Render (ping cada 10 minutos)
+setInterval(async () => {
+  const externalUrl = process.env.RENDER_EXTERNAL_URL;
+  if (externalUrl) {
+    try {
+      await fetch(`${externalUrl}/api/status`);
+    } catch (e) {}
+  }
+}, 10 * 60 * 1000);
+
 app.listen(PORT, async () => {
   console.log(`\n========================================================`);
   console.log(`🚀 Agente de Búsqueda Laboral (Antonella) corriendo en:`);
