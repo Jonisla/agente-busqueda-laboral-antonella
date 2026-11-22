@@ -14,6 +14,11 @@ const {
 
 const DEFAULT_BA_CHANNELS = [
   {
+    name: 'EMPLEOS ARGENTINA (CABA, Ciudadela y GBA)',
+    code: '0029VbBm7Ab5a24BnFW9rw3b',
+    url: 'https://whatsapp.com/channel/0029VbBm7Ab5a24BnFW9rw3b'
+  },
+  {
     name: 'C.A.O.L. Empleos AMBA Oeste BsAs',
     code: '0029Vb7F3kE7tkjFV8DMI92a',
     url: 'https://whatsapp.com/channel/0029Vb7F3kE7tkjFV8DMI92a'
@@ -24,12 +29,37 @@ const DEFAULT_BA_CHANNELS = [
     url: 'https://whatsapp.com/channel/0029Vb6Jl6JKrWQrPOC1VD2D'
   },
   {
+    name: 'Empleos CABA - GBA (Contacto Directo)',
+    code: '0029Vb83szT545v4nDoM973u',
+    url: 'https://whatsapp.com/channel/0029Vb83szT545v4nDoM973u'
+  },
+  {
+    name: 'Busca y Encontrá — Empleos CABA y GBA',
+    code: '0029Vb4PJWwAzNbzehTAaJ1L',
+    url: 'https://whatsapp.com/channel/0029Vb4PJWwAzNbzehTAaJ1L'
+  },
+  {
+    name: 'Atención al Cliente y Empleos CABA',
+    code: '0029Vb63wuI4CrfoPU9Kl61n',
+    url: 'https://whatsapp.com/channel/0029Vb63wuI4CrfoPU9Kl61n'
+  },
+  {
     name: 'Búsquedas Laborales CABA y PBA',
     code: '0029VbA6KUn0lwgwbmehUA2g',
     url: 'https://whatsapp.com/channel/0029VbA6KUn0lwgwbmehUA2g'
   },
   {
-    name: 'Empleos AMBA / CABA y GBA',
+    name: 'Laburo y Estudio — Vacantes GBA y CABA',
+    code: '0029Vasef0J2ZjCnWbWLYb1T',
+    url: 'https://whatsapp.com/channel/0029Vasef0J2ZjCnWbWLYb1T'
+  },
+  {
+    name: 'Recursos Humanos en Argentina (Vacantes)',
+    code: '0029Vb7k5tWH5JLpEfTVui2j',
+    url: 'https://whatsapp.com/channel/0029Vb7k5tWH5JLpEfTVui2j'
+  },
+  {
+    name: 'Bolsa de Trabajo de Argentina (AMBA / CABA)',
     code: '0029VaKrYMRFsn0hi3yTds1Z',
     url: 'https://whatsapp.com/channel/0029VaKrYMRFsn0hi3yTds1Z'
   },
@@ -42,6 +72,16 @@ const DEFAULT_BA_CHANNELS = [
     name: 'CV By Sol | Empleos Argentina (AMBA)',
     code: '0029VbCpYbg1Hspteu34Yf1C',
     url: 'https://whatsapp.com/channel/0029VbCpYbg1Hspteu34Yf1C'
+  },
+  {
+    name: 'Empleos de Hoy (Argentina)',
+    code: '0029VaFOyZz002T7tDo1va1M',
+    url: 'https://whatsapp.com/channel/0029VaFOyZz002T7tDo1va1M'
+  },
+  {
+    name: 'Argentina Jobs (Difusión Laboral)',
+    code: '0029VaoTd6DFsn0Zy5b9R00w',
+    url: 'https://whatsapp.com/channel/0029VaoTd6DFsn0Zy5b9R00w'
   },
   {
     name: 'Búsquedas HR - Argentina',
