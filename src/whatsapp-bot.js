@@ -170,12 +170,23 @@ class WhatsAppJobAssistant {
     try {
       const groups = await this.sock.groupFetchAllParticipating();
       for (const [id, meta] of Object.entries(groups)) {
+        const subject = meta.subject || id;
         this.monitoredChats.set(id, {
           id,
-          name: meta.subject || id,
+          name: subject,
           type: 'group',
           enabled: this.savedMonitoredIds.has(id)
         });
+
+        // Auto-detectar el grupo creado con Antonella si se llama "Empleos Anto", "Busqueda Laboral", "Trabajo Anto", etc.
+        if (
+          /empleos?\s*anto|b[uú]squeda\s*laboral|trabajo\s*anto|cv\s*anto/i.test(subject) &&
+          !this.notifyNumber.includes('@g.us')
+        ) {
+          this.notifyNumber = id;
+          this.saveConfig();
+          console.log(`🎯 Grupo exclusivo detectado automáticamente: "${subject}" (${id})`);
+        }
       }
     } catch (e) {
       console.error('No se pudieron listar grupos:', e.message);
@@ -242,8 +253,10 @@ class WhatsAppJobAssistant {
     }
 
     // En chats personales, SOLO procesar si el usuario puso explícitamente #cv / #empleo
-    // o si viene de un Canal (@newsletter) / Grupo (@g.us) monitoreado.
-    // Así NUNCA entra en bucle ni procesa conversaciones privadas entre Joni y Anto.
+    // En el Grupo Exclusivo de Alertas (de Joni y Anto), procesar cualquier oferta o flyer que reenvíen ahí
+    // En Canales/Grupos de bolsas de trabajo monitoreados, procesar cuando parece oferta laboral
+    const isDedicatedAlertGroup =
+      remoteJid.endsWith('@g.us') && String(this.notifyNumber || '').includes(remoteJid);
     const hasTriggerTag = /#cv|#empleo|#oferta/i.test(text);
     const isMonitoredChannelOrGroup =
       this.savedMonitoredIds.has(remoteJid) ||
@@ -253,10 +266,11 @@ class WhatsAppJobAssistant {
       /cv|curriculum|currículum|buscamos|búsqueda|busqueda|recepcionista|administrativ|secretaria|admisión|admision|atención al cliente|data entry|vacante|puesto|enviar mail|asunto|horario|remuneración|sueldo|zona/i.test(
         text
       ) ||
-      (isMonitoredChannelOrGroup && hasImage);
+      ((isMonitoredChannelOrGroup || isDedicatedAlertGroup) && hasImage);
 
     const shouldProcess =
       hasTriggerTag ||
+      (isDedicatedAlertGroup && looksLikeJobOffer) ||
       (isMonitoredChannelOrGroup && (remoteJid.endsWith('@newsletter') || remoteJid.endsWith('@g.us')) && looksLikeJobOffer);
 
     if (!shouldProcess) return;
