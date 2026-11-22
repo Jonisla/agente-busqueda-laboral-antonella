@@ -47,11 +47,11 @@ async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 
   const profile = loadProfile();
 
   // Deduplicación: no procesar la misma oferta dos veces
-  const history = loadHistory();
+  const existingHistory = loadHistory();
   const titleMatch = text.match(/(?:Puesto|Búsqueda|Buscamos|Vacante)[:\s]*([^\n\r.]+)/i);
   const detectedTitle = titleMatch ? titleMatch[1].trim().toLowerCase().slice(0, 60) : '';
   if (detectedTitle) {
-    const isDuplicate = history.some(h => {
+    const isDuplicate = existingHistory.some(h => {
       const existingTitle = (h.analysis?.jobDetails?.title || '').toLowerCase().slice(0, 60);
       const existingSource = h.source || '';
       // Considerar duplicado si el título es muy similar y fue procesado en las últimas 24 horas
