@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const nodemailer = require('nodemailer');
 
 const SENT_CONTACTS_PATH = path.join(__dirname, '..', 'data', 'sent-contacts.json');
 
@@ -58,7 +57,8 @@ function alreadyContactedInHistory(email, phone) {
 }
 
 /**
- * Envía automáticamente el CV en PDF por Email al reclutador usando Gmail SMTP
+ * Envía automáticamente el CV en PDF por Email al reclutador usando Resend (HTTP API)
+ * Render bloquea SMTP saliente, por eso usamos Resend que usa HTTPS (puerto 443)
  */
 async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFileName, profile }) {
   const cleanEmail = String(toEmail || '').trim().toLowerCase();
@@ -78,7 +78,6 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
     };
   }
 
-  // Doble verificación contra el historial de ofertas (persiste en Render)
   if (alreadyContactedInHistory(cleanEmail, null)) {
     return {
       sent: false,
@@ -87,50 +86,42 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
     };
   }
 
-  const gmailUser = process.env.GMAIL_USER || 'jonisla28@gmail.com';
-  const gmailPass = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
-
-  if (!gmailUser || !gmailPass) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
     return {
       sent: false,
       needsConfig: true,
-      reason: 'Falta configurar Gmail App Password para envío automático de correos'
+      reason: 'Falta configurar RESEND_API_KEY para envío automático de correos. Creá una cuenta gratis en resend.com y agregá la API Key en Render.'
     };
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: gmailUser,
-        pass: gmailPass
-      },
-      connectionTimeout: 20000,
-      greetingTimeout: 15000,
-      socketTimeout: 30000
-    });
+    const { Resend } = require('resend');
+    const resend = new Resend(resendApiKey);
 
-    const info = await transporter.sendMail({
-      from: `"${profile.fullName}" <${gmailUser}>`,
-      replyTo: 'afernand1995@gmail.com, antonellasolangefernandez095@gmail.com',
-      to: cleanEmail,
+    const attachments = [];
+    if (pdfPath && fs.existsSync(pdfPath)) {
+      const pdfBuffer = fs.readFileSync(pdfPath);
+      attachments.push({
+        filename: pdfFileName || 'CV_Antonella_Solange_Fernandez.pdf',
+        content: pdfBuffer.toString('base64')
+      });
+    }
+
+    const result = await resend.emails.send({
+      from: 'Antonella Solange Fernández <onboarding@resend.dev>',
+      replyTo: 'afernand1995@gmail.com',
+      to: [cleanEmail],
       subject: subject || `CV - ${profile.fullName}`,
       text: bodyText,
-      attachments:
-        pdfPath && fs.existsSync(pdfPath)
-          ? [
-              {
-                filename: pdfFileName || 'CV_Antonella_Solange_Fernandez.pdf',
-                path: pdfPath,
-                contentType: 'application/pdf'
-              }
-            ]
-          : []
+      attachments: attachments.length > 0 ? attachments : undefined
     });
 
-    console.log(`[EMAIL] Enviado a ${cleanEmail}, messageId: ${info.messageId}`);
+    if (result.error) {
+      throw new Error(result.error.message || JSON.stringify(result.error));
+    }
+
+    console.log(`[EMAIL] Enviado a ${cleanEmail}, id: ${result.data?.id}`);
 
     history.emails[cleanEmail] = {
       sentAt: new Date().toISOString(),
@@ -142,13 +133,13 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
       sent: true,
       recipient: cleanEmail,
       subject,
-      messageId: info.messageId
+      messageId: result.data?.id
     };
   } catch (err) {
     console.error(`[EMAIL ERROR] ${cleanEmail}: ${err.message}`);
     return {
       sent: false,
-      reason: `Error SMTP: ${err.message}`
+      reason: `Error Resend: ${err.message}`
     };
   }
 }
@@ -158,5 +149,6 @@ module.exports = {
   loadSentContacts,
   saveSentContacts,
   BLOCKED_PHONES,
-  BLOCKED_EMAILS
+  BLOCKED_EMAILS,
+  alreadyContactedInHistory
 };

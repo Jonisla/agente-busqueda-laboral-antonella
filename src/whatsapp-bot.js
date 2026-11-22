@@ -16,7 +16,8 @@ const {
   sendEmailApplication,
   loadSentContacts,
   saveSentContacts,
-  BLOCKED_PHONES
+  BLOCKED_PHONES,
+  alreadyContactedInHistory
 } = require('./auto-applicant');
 
 const DEFAULT_BA_CHANNELS = [
@@ -531,7 +532,6 @@ class WhatsAppJobAssistant {
     }
 
     // Doble verificación contra el historial de ofertas (persiste en Render)
-    const { alreadyContactedInHistory } = require('./auto-applicant');
     if (alreadyContactedInHistory(null, phone)) {
       return {
         sent: false,
