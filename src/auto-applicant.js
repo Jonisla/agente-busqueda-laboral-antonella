@@ -57,7 +57,7 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
     };
   }
 
-  const gmailUser = process.env.GMAIL_USER;
+  const gmailUser = process.env.GMAIL_USER || 'jonisla28@gmail.com';
   const gmailPass = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
 
   if (!gmailUser || !gmailPass) {
@@ -79,7 +79,7 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
 
     await transporter.sendMail({
       from: `"${profile.fullName}" <${gmailUser}>`,
-      replyTo: profile.email,
+      replyTo: 'afernand1995@gmail.com, antonellasolangefernandez095@gmail.com',
       to: cleanEmail,
       subject: subject || `CV - ${profile.fullName}`,
       text: bodyText,
