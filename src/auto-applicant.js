@@ -71,15 +71,15 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      port: 465,
+      secure: true,
       auth: {
         user: gmailUser,
         pass: gmailPass
       },
-      connectionTimeout: 15000,
-      greetingTimeout: 10000,
-      socketTimeout: 20000
+      connectionTimeout: 20000,
+      greetingTimeout: 15000,
+      socketTimeout: 30000
     });
 
     const info = await transporter.sendMail({
