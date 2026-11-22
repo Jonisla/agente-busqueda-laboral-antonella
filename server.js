@@ -45,6 +45,25 @@ function saveHistory(list) {
  */
 async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 'image/jpeg', source = 'Manual / Canal WA', includePhoto = true }) {
   const profile = loadProfile();
+
+  // Deduplicación: no procesar la misma oferta dos veces
+  const history = loadHistory();
+  const titleMatch = text.match(/(?:Puesto|Búsqueda|Buscamos|Vacante)[:\s]*([^\n\r.]+)/i);
+  const detectedTitle = titleMatch ? titleMatch[1].trim().toLowerCase().slice(0, 60) : '';
+  if (detectedTitle) {
+    const isDuplicate = history.some(h => {
+      const existingTitle = (h.analysis?.jobDetails?.title || '').toLowerCase().slice(0, 60);
+      const existingSource = h.source || '';
+      // Considerar duplicado si el título es muy similar y fue procesado en las últimas 24 horas
+      const timeDiff = Date.now() - new Date(h.createdAt).getTime();
+      return existingTitle.includes(detectedTitle.slice(0, 30)) && timeDiff < 24 * 60 * 60 * 1000;
+    });
+    if (isDuplicate) {
+      console.log(`[DEDUP] Oferta duplicada detectada: "${detectedTitle}" - saltando procesamiento`);
+      return null;
+    }
+  }
+
   const analysis = await analyzeOfferAndTailorCV({
     text,
     imageBuffer,
@@ -182,6 +201,10 @@ app.post('/api/analyze', upload.single('flyer'), async (req, res) => {
       includePhoto
     });
 
+    if (!record) {
+      return res.status(200).json({ skipped: true, reason: 'Oferta duplicada - ya fue procesada anteriormente' });
+    }
+
     res.json(record);
   } catch (err) {
     console.error('Error en /api/analyze:', err);
@@ -252,6 +275,10 @@ app.post('/api/portals/adapt', async (req, res) => {
       source: `Portal Web (${location || 'Buenos Aires'})`,
       includePhoto: true
     });
+
+    if (!record) {
+      return res.status(200).json({ skipped: true, reason: 'Oferta duplicada - ya fue procesada anteriormente' });
+    }
 
     if (url && !record.analysis.jobDetails.applyUrl) {
       record.analysis.jobDetails.applyUrl = url;
@@ -367,6 +394,7 @@ async function runAutomaticRadarCycle() {
           source: `Radar Automático (${of.location || 'BA'})`,
           includePhoto: true
         });
+        if (!record) continue;
         if (of.url && !record.analysis.jobDetails.applyUrl) {
           record.analysis.jobDetails.applyUrl = of.url;
         }
@@ -405,7 +433,7 @@ app.listen(PORT, async () => {
   const history = loadHistory();
   if (history.length === 0) {
     try {
-      await processNewOffer({
+      const exampleResult = await processNewOffer({
         text: `BÚSQUEDA ACTIVA - CENTRO MÉDICO EN RAMOS MEJÍA / CABA
 Buscamos Recepcionista / Admisión de Pacientes para clínica y consultorios externos.
 Tareas: Recepción de pacientes, validación de obras sociales y prepagas, asignación de turnos, carga de datos en sistema y atención telefónica.
@@ -414,7 +442,9 @@ Enviar CV actualizado por mail a rrhh.centromedico@gmail.com con ASUNTO: RECEPCI
         source: 'Ejemplo Canal Bolsa de Trabajo BA',
         includePhoto: true
       });
-      console.log('✅ CV Maestro inicial de muestra generado con éxito.');
+      if (exampleResult) {
+        console.log('✅ CV Maestro inicial de muestra generado con éxito.');
+      }
     } catch (e) {
       console.error('Error generando ejemplo inicial:', e.message);
     }

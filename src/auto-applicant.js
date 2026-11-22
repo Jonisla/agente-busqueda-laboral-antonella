@@ -37,6 +37,27 @@ function saveSentContacts(data) {
 }
 
 /**
+ * Verifica si ya se envió un CV a este email o teléfono consultando el historial de ofertas
+ */
+function alreadyContactedInHistory(email, phone) {
+  try {
+    const historyPath = path.join(__dirname, '..', 'data', 'offers-history.json');
+    if (fs.existsSync(historyPath)) {
+      const history = JSON.parse(fs.readFileSync(historyPath, 'utf8'));
+      for (const item of history) {
+        if (item.applied) {
+          const itemEmail = (item.analysis?.jobDetails?.contactEmail || '').toLowerCase().trim();
+          const itemPhone = (item.analysis?.jobDetails?.contactPhone || '').replace(/\D/g, '');
+          if (email && itemEmail === email.toLowerCase().trim()) return true;
+          if (phone && itemPhone === phone.replace(/\D/g, '')) return true;
+        }
+      }
+    }
+  } catch (e) {}
+  return false;
+}
+
+/**
  * Envía automáticamente el CV en PDF por Email al reclutador usando Gmail SMTP
  */
 async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFileName, profile }) {
@@ -54,6 +75,15 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
       sent: false,
       alreadySent: true,
       reason: `Ya se había enviado CV a ${cleanEmail} el ${new Date(history.emails[cleanEmail].sentAt).toLocaleDateString('es-AR')}`
+    };
+  }
+
+  // Doble verificación contra el historial de ofertas (persiste en Render)
+  if (alreadyContactedInHistory(cleanEmail, null)) {
+    return {
+      sent: false,
+      alreadySent: true,
+      reason: `Ya se había enviado CV a ${cleanEmail} (verificado en historial de ofertas)`
     };
   }
 

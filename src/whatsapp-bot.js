@@ -530,6 +530,16 @@ class WhatsAppJobAssistant {
       };
     }
 
+    // Doble verificación contra el historial de ofertas (persiste en Render)
+    const { alreadyContactedInHistory } = require('./auto-applicant');
+    if (alreadyContactedInHistory(null, phone)) {
+      return {
+        sent: false,
+        alreadySent: true,
+        reason: `Ya se había enviado CV al WhatsApp +${phone} (verificado en historial de ofertas)`
+      };
+    }
+
     try {
       const check = await this.sock.onWhatsApp(phone);
       const exists = Array.isArray(check) && check[0]?.exists;
