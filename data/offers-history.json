@@ -1,0 +1,184 @@
+[
+  {
+    "id": "offer_1795368917803_cd7s",
+    "createdAt": "2026-11-22T17:35:17.803Z",
+    "source": "WhatsApp (Reenviado)",
+    "rawText": "🎯 *MATCH LABORAL PARA ANTONELLA (95%)*\n\n📌 *Puesto:* Recepcionista de Salud y Admisión de Pacientes\n📍 *Zona:* Buenos Aires (AMBA)\n💡 *Por qué aplica:* ¡Match Ideal! Su experiencia en UPA 4 y Vacunate encaja directo con búsquedas de recepción/admisión en salud.\n\n\n📄 *Abajo te adjunto el CV en PDF ya modificado y adaptado para este puesto:*",
+    "analysis": {
+      "isJobOffer": true,
+      "matchScore": 95,
+      "matchReason": "¡Match Ideal! Su experiencia en UPA 4 y Vacunate encaja directo con búsquedas de recepción/admisión en salud.",
+      "jobDetails": {
+        "title": "Recepcionista de Salud y Admisión de Pacientes",
+        "company": "Búsqueda Laboral Detectada",
+        "location": "Buenos Aires (AMBA)",
+        "zoneValid": true,
+        "schedule": "A convenir",
+        "contactEmail": "",
+        "emailSubject": "CV - Recepcionista de Salud y Admisión de Pacientes - Antonella Solange Fernández",
+        "contactPhone": "",
+        "applyUrl": ""
+      },
+      "tailoredCV": {
+        "headline": "Recepcionista de Clínica, Guardia y Admisión | Gestión Sanitaria",
+        "summary": "Recepcionista administrativa de salud con sólida trayectoria comprobable desde 2021 en admisión de pacientes, atención de guardia e internación, gestión de turnos, validación de obras sociales/prepagas y manejo de historias clínicas digitales. Destacada por mi templanza, rapidez en sistemas informáticos y trato empático con pacientes, familiares y equipo médico.",
+        "skillGroup1": {
+          "title": "Admisión y Gestión en Salud",
+          "items": [
+            "Admisión de Pacientes y Guardia",
+            "Validación de Obras Sociales / Prepagas",
+            "Asignación de Turnos y Agendas Médicas",
+            "Historias Clínicas y Derivaciones",
+            "Triage Administrativo e Internación",
+            "Trato Empático con Pacientes"
+          ]
+        },
+        "skillGroup2": {
+          "title": "Sistemas y Administración",
+          "items": [
+            "Sistemas de Gestión de Salud",
+            "Carga Ágil de Datos Filiatorios",
+            "Atención Telefónica y Presencial",
+            "Paquete Office (Excel / Word)",
+            "Control de Documentación Clínica",
+            "Trabajo bajo Presión"
+          ]
+        },
+        "experiences": [
+          {
+            "company": "UPA 4 (Unidad de Pronta Atención)",
+            "period": "2022 – Presente",
+            "role": "Recepcionista de Guardia, Admisión e Internación",
+            "bullets": [
+              "Atención y admisión integral de pacientes en guardia y consultorios: validación de DNI, obras sociales/coberturas e ingreso rápido al sistema informático.",
+              "Gestión administrativa de turnos, pases a salas de internación y coordinación de derivaciones médicas a centros de mayor complejidad.",
+              "Carga precisa de datos filiatorios, administración de historias clínicas digitales y control estricto de ingresos y altas.",
+              "Atención telefónica y presencial a pacientes y familiares, brindando orientación clara y contención en entornos de alta demanda."
+            ]
+          },
+          {
+            "company": "Programa Buenos Aires Vacunate",
+            "period": "2021 – 2022",
+            "role": "Administrativa de Admisión y Registro Sanitario",
+            "bullets": [
+              "Recepción, admisión y validación masiva de pacientes en plataforma digital de salud bajo protocolos estrictos.",
+              "Control administrativo de trazabilidad de insumos sanitarios, planillas operativas y organización del flujo de atención."
+            ]
+          },
+          {
+            "company": "Inpacont S.A.",
+            "period": "2017 – Presente",
+            "role": "Auxiliar Operativa y Cumplimiento de Protocolos",
+            "bullets": [
+              "Ejecución metódica de protocolos operativos y normativas de bioseguridad e higiene institucional."
+            ]
+          }
+        ]
+      },
+      "applicationMessages": {
+        "whatsappText": "Hola! Qué tal? Mi nombre es Antonella Fernández, vi la búsqueda de *Recepcionista de Salud y Admisión de Pacientes* y me interesa muchísimo postularme. Cuento con experiencia comprobable desde 2021 en recepción, atención al público, manejo de sistemas informáticos, gestión de turnos/admisión y tareas administrativas (actualmente en UPA 4). Resido en Ciudadela (límite con CABA) con disponibilidad inmediata. Adjunto mi CV actualizado. Muchas gracias!",
+        "emailSubject": "CV - Recepcionista de Salud y Admisión de Pacientes - Antonella Solange Fernández",
+        "emailBody": "Estimados,\n\nMe dirijo a ustedes con el fin de postularme a la búsqueda de Recepcionista de Salud y Admisión de Pacientes.\n\nCuento con sólida experiencia comprobable en recepción, atención presencial y telefónica, admisión, validación de obras sociales/documentación, gestión de turnos y carga de datos en sistemas informáticos (desempeñándome desde 2022 a la actualidad en UPA 4 y previamente en el programa Buenos Aires Vacunate).\n\nResido en Ciudadela (a minutos de CABA y Zona Oeste) y cuento con disponibilidad inmediata.\n\nAdjunto mi CV actualizado en formato PDF y quedo a entera disposición para una entrevista.\n\nSaludos cordiales,\nAntonella Solange Fernández\nTel / WhatsApp: 11-6530-7320\nEmail: antonellasolangefernandez095@gmail.com"
+      },
+      "usedEngine": "local-smart-rules",
+      "geminiError": "{\"error\":{\"code\":429,\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-3.8-flash, description: Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 16.868159541s.\",\"status\":\"RESOURCE_EXHAUSTED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.Help\",\"links\":[{\"description\":\"Learn more about Gemini API quotas\",\"url\":\"https://aistudio.google.com/docs/rate-limits\"}]},{\"@type\":\"type.googleapis.com/google.rpc.QuotaFailure\",\"violations\":[{\"description\":\"Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\",\"quotaMetric\":\"generativelanguage.googleapis.com/generate_content_free_tier_requests\",\"quotaId\":\"GenerateRequestsPerMinutePerProjectPerModel-FreeTier\",\"quotaDimensions\":{\"model\":\"gemini-3.8-flash\",\"location\":\"global\"},\"quotaValue\":\"5\"}]},{\"@type\":\"type.googleapis.com/google.rpc.RetryInfo\",\"retryDelay\":\"16s\"}]}}"
+    },
+    "pdf": {
+      "fileName": "CV_Antonella_Fernandez_Recepcionista_de_Salud_y_Admision_de_Paciente_89438.pdf",
+      "filePath": "C:\\Users\\jonis\\OneDrive\\Desktop\\Proyectos OpenCode\\agente busqueda laboral\\public\\generated-cvs\\CV_Antonella_Fernandez_Recepcionista_de_Salud_y_Admision_de_Paciente_89438.pdf",
+      "publicUrl": "/generated-cvs/CV_Antonella_Fernandez_Recepcionista_de_Salud_y_Admision_de_Paciente_89438.pdf"
+    },
+    "applied": false
+  },
+  {
+    "id": "offer_1795368892254_frwr",
+    "createdAt": "2026-11-22T17:34:52.254Z",
+    "source": "WhatsApp (Reenviado)",
+    "rawText": "CV adaptado para: Recepcionista de Salud y Admisión de Pacientes",
+    "analysis": {
+      "isJobOffer": true,
+      "matchScore": 95,
+      "matchReason": "¡Match Ideal! Su experiencia en UPA 4 y Vacunate encaja directo con búsquedas de recepción/admisión en salud.",
+      "jobDetails": {
+        "title": "Recepcionista de Salud y Admisión de Pacientes",
+        "company": "Búsqueda Laboral Detectada",
+        "location": "Buenos Aires (AMBA)",
+        "zoneValid": true,
+        "schedule": "A convenir",
+        "contactEmail": "",
+        "emailSubject": "CV - Recepcionista de Salud y Admisión de Pacientes - Antonella Solange Fernández",
+        "contactPhone": "",
+        "applyUrl": ""
+      },
+      "tailoredCV": {
+        "headline": "Recepcionista de Clínica, Guardia y Admisión | Gestión Sanitaria",
+        "summary": "Recepcionista administrativa de salud con sólida trayectoria comprobable desde 2021 en admisión de pacientes, atención de guardia e internación, gestión de turnos, validación de obras sociales/prepagas y manejo de historias clínicas digitales. Destacada por mi templanza, rapidez en sistemas informáticos y trato empático con pacientes, familiares y equipo médico.",
+        "skillGroup1": {
+          "title": "Admisión y Gestión en Salud",
+          "items": [
+            "Admisión de Pacientes y Guardia",
+            "Validación de Obras Sociales / Prepagas",
+            "Asignación de Turnos y Agendas Médicas",
+            "Historias Clínicas y Derivaciones",
+            "Triage Administrativo e Internación",
+            "Trato Empático con Pacientes"
+          ]
+        },
+        "skillGroup2": {
+          "title": "Sistemas y Administración",
+          "items": [
+            "Sistemas de Gestión de Salud",
+            "Carga Ágil de Datos Filiatorios",
+            "Atención Telefónica y Presencial",
+            "Paquete Office (Excel / Word)",
+            "Control de Documentación Clínica",
+            "Trabajo bajo Presión"
+          ]
+        },
+        "experiences": [
+          {
+            "company": "UPA 4 (Unidad de Pronta Atención)",
+            "period": "2022 – Presente",
+            "role": "Recepcionista de Guardia, Admisión e Internación",
+            "bullets": [
+              "Atención y admisión integral de pacientes en guardia y consultorios: validación de DNI, obras sociales/coberturas e ingreso rápido al sistema informático.",
+              "Gestión administrativa de turnos, pases a salas de internación y coordinación de derivaciones médicas a centros de mayor complejidad.",
+              "Carga precisa de datos filiatorios, administración de historias clínicas digitales y control estricto de ingresos y altas.",
+              "Atención telefónica y presencial a pacientes y familiares, brindando orientación clara y contención en entornos de alta demanda."
+            ]
+          },
+          {
+            "company": "Programa Buenos Aires Vacunate",
+            "period": "2021 – 2022",
+            "role": "Administrativa de Admisión y Registro Sanitario",
+            "bullets": [
+              "Recepción, admisión y validación masiva de pacientes en plataforma digital de salud bajo protocolos estrictos.",
+              "Control administrativo de trazabilidad de insumos sanitarios, planillas operativas y organización del flujo de atención."
+            ]
+          },
+          {
+            "company": "Inpacont S.A.",
+            "period": "2017 – Presente",
+            "role": "Auxiliar Operativa y Cumplimiento de Protocolos",
+            "bullets": [
+              "Ejecución metódica de protocolos operativos y normativas de bioseguridad e higiene institucional."
+            ]
+          }
+        ]
+      },
+      "applicationMessages": {
+        "whatsappText": "Hola! Qué tal? Mi nombre es Antonella Fernández, vi la búsqueda de *Recepcionista de Salud y Admisión de Pacientes* y me interesa muchísimo postularme. Cuento con experiencia comprobable desde 2021 en recepción, atención al público, manejo de sistemas informáticos, gestión de turnos/admisión y tareas administrativas (actualmente en UPA 4). Resido en Ciudadela (límite con CABA) con disponibilidad inmediata. Adjunto mi CV actualizado. Muchas gracias!",
+        "emailSubject": "CV - Recepcionista de Salud y Admisión de Pacientes - Antonella Solange Fernández",
+        "emailBody": "Estimados,\n\nMe dirijo a ustedes con el fin de postularme a la búsqueda de Recepcionista de Salud y Admisión de Pacientes.\n\nCuento con sólida experiencia comprobable en recepción, atención presencial y telefónica, admisión, validación de obras sociales/documentación, gestión de turnos y carga de datos en sistemas informáticos (desempeñándome desde 2022 a la actualidad en UPA 4 y previamente en el programa Buenos Aires Vacunate).\n\nResido en Ciudadela (a minutos de CABA y Zona Oeste) y cuento con disponibilidad inmediata.\n\nAdjunto mi CV actualizado en formato PDF y quedo a entera disposición para una entrevista.\n\nSaludos cordiales,\nAntonella Solange Fernández\nTel / WhatsApp: 11-6530-7320\nEmail: antonellasolangefernandez095@gmail.com"
+      },
+      "usedEngine": "local-smart-rules",
+      "geminiError": "{\"error\":{\"code\":429,\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-3.8-flash, description: Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 29.692832828s.\",\"status\":\"RESOURCE_EXHAUSTED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.Help\",\"links\":[{\"description\":\"Learn more about Gemini API quotas\",\"url\":\"https://aistudio.google.com/docs/rate-limits\"}]},{\"@type\":\"type.googleapis.com/google.rpc.QuotaFailure\",\"violations\":[{\"description\":\"Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\",\"quotaMetric\":\"generativelanguage.googleapis.com/generate_content_free_tier_requests\",\"quotaId\":\"GenerateRequestsPerMinutePerProjectPerModel-FreeTier\",\"quotaDimensions\":{\"location\":\"global\",\"model\":\"gemini-3.8-flash\"},\"quotaValue\":\"5\"}]},{\"@type\":\"type.googleapis.com/google.rpc.RetryInfo\",\"retryDelay\":\"29s\"}]}}"
+    },
+    "pdf": {
+      "fileName": "CV_Antonella_Fernandez_Recepcionista_de_Salud_y_Admision_de_Paciente_86847.pdf",
+      "filePath": "C:\\Users\\jonis\\OneDrive\\Desktop\\Proyectos OpenCode\\agente busqueda laboral\\public\\generated-cvs\\CV_Antonella_Fernandez_Recepcionista_de_Salud_y_Admision_de_Paciente_86847.pdf",
+      "publicUrl": "/generated-cvs/CV_Antonella_Fernandez_Recepcionista_de_Salud_y_Admision_de_Paciente_86847.pdf"
+    },
+    "applied": false
+  }
+]

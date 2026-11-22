@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: agente-laboral-antonella
+    runtime: docker
+    plan: free
+    envVars:
+      - key: PORT
+        value: 3456
+      - key: USE_LIGHT_PDF
+        value: true

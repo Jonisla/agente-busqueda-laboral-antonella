@@ -1,0 +1,103 @@
+{
+  "fullName": "Antonella Solange Fernández",
+  "phone": "11-6530-7320",
+  "phoneClean": "5491165307320",
+  "email": "antonellasolangefernandez095@gmail.com",
+  "location": "Ciudadela, GBA Oeste (Límite con CABA)",
+  "birthDate": "21/05/1995",
+  "nationality": "Argentina",
+  "photoPath": "/assets/foto-antonella.jpg",
+  "targetRoles": [
+    "Recepcionista de Clínica / Sanatorio / Consultorio",
+    "Admisión de Pacientes / Guardia e Internación",
+    "Secretaria Médica / Recepcionista de Centro de Estética o Odontológico",
+    "Administrativa / Auxiliar Administrativa",
+    "Atención al Cliente / Recepción Comercial",
+    "Operadora de Data Entry / Carga de Datos"
+  ],
+  "targetZones": [
+    "CABA (Capital Federal: Liniers, Devoto, Villa del Parque, Flores, Floresta, Caballito, Almagro, Palermo, Belgrano, Microcentro, Once, Congreso, etc.)",
+    "GBA Zona Oeste (Ciudadela, Ramos Mejía, Haedo, Morón, Castelar, Ituzaingó, San Justo, Villa Luzuriaga, Caseros, Tres de Febrero, Santos Lugares, Sáenz Peña)",
+    "Remoto / Home Office"
+  ],
+  "excludedRoles": [
+    "Programador",
+    "Ingeniero",
+    "Chofer con registro profesional",
+    "Técnico electromecánico",
+    "Vendedor viajante con auto propio"
+  ],
+  "coreSkills": {
+    "saludYRecepcion": [
+      "Admisión de Pacientes y Guardia Médica",
+      "Validación de Obras Sociales, Prepagas y DNI",
+      "Asignación de Turnos y Manejo de Agendas",
+      "Triage Administrativo y Gestión de Internación",
+      "Historias Clínicas Digitales y Derivaciones",
+      "Atención Telefónica y Presencial al Público"
+    ],
+    "administracionYSistemas": [
+      "Sistemas de Gestión Hospitalaria / Turnos",
+      "Carga Masiva y Validación de Datos (Data Entry)",
+      "Manejo de PC, Paquete Office (Word, Excel) y Correo",
+      "Control Documental, Archivos y Planillas",
+      "Trazabilidad de Insumos y Logística Operativa",
+      "Resolución de Consultas y Trabajo bajo Presión"
+    ]
+  },
+  "experiences": [
+    {
+      "id": "upa4",
+      "company": "UPA 4 (Unidad de Pronta Atención)",
+      "period": "2022 – Presente",
+      "defaultTitle": "Recepcionista de Guardia, Admisión y Gestión Administrativa",
+      "highlights": [
+        "Atención y recepción integral de pacientes: admisión por guardia y consultorios, validación de identidad, obras sociales/coberturas e ingreso ágil al sistema informático.",
+        "Gestión de turnos, internación y derivaciones: coordinación administrativa de agendas, pases a salas de observación/internación y derivaciones médicas.",
+        "Documentación e historias clínicas: carga precisa de datos filiatorios, actualización de historias clínicas digitales y control estricto de ingresos y altas.",
+        "Atención telefónica y presencial en entornos de alta demanda: orientación a pacientes y familiares, resolución de consultas y articulación directa con el equipo médico."
+      ]
+    },
+    {
+      "id": "vacunate",
+      "company": "Programa Buenos Aires Vacunate",
+      "period": "2021 – 2022",
+      "defaultTitle": "Administrativa de Admisión, Registro en Sistema y Logística",
+      "highlights": [
+        "Recepción, admisión y validación masiva de datos en plataforma digital oficial de salud, verificando turnos y documentación.",
+        "Organización operativa del flujo de atención al público, brindando asistencia clara y dinámica a cientos de personas por jornada.",
+        "Control administrativo de stock, trazabilidad de insumos y carga de planillas de seguimiento diario."
+      ]
+    },
+    {
+      "id": "inpacont",
+      "company": "Inpacont S.A.",
+      "period": "2017 – Presente",
+      "defaultTitle": "Auxiliar Operativa y de Servicios Generales",
+      "highlights": [
+        "Cumplimiento metódico de protocolos operativos, orden de instalaciones y estándares de higiene y bioseguridad en entorno corporativo."
+      ]
+    },
+    {
+      "id": "autonoma",
+      "company": "Servicios Independientes",
+      "period": "2014 – 2023",
+      "defaultTitle": "Asistencia Personalizada y Gestión de Servicios",
+      "highlights": [
+        "Atención personalizada, organización de tareas diarias y trato empático con familias y personas mayores."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachiller en Artes Visuales (Secundario Completo)",
+      "institution": "Escuela Secundaria Nº 3 José Hernández",
+      "period": "2011 – 2013"
+    },
+    {
+      "degree": "Formación Profesional en Gastronomía (Chef Profesional)",
+      "institution": "Escuela Nº 22 Provincia de Santa Cruz",
+      "period": "2010 – 2011"
+    }
+  ]
+}

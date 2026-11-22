@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agente Laboral Antonella — Postulación a 1 Clic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1120;
+      --surface: #111827;
+      --surface-2: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-dark: #0284c7;
+      --success: #22c55e;
+      --success-dark: #16a34a;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      background: rgba(17, 24, 39, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .brand-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center 15%;
+      border: 2px solid var(--primary);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.08rem;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .status-pills {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .pill:hover {
+      border-color: var(--primary);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .dot.green { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .dot.amber { background: var(--warning); }
+
+    /* NAV TABS */
+    .nav-tabs {
+      max-width: 1440px;
+      margin: 18px auto 0;
+      padding: 0 24px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: var(--surface);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      border-color: #475569;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff;
+      border-color: #38bdf8;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+    }
+
+    /* MAIN LAYOUT */
+    .container {
+      max-width: 1440px;
+      margin: 18px auto 40px;
+      padding: 0 24px;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 450px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+      .grid-main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.02rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-desc {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    textarea, input[type="text"], input[type="password"] {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 11px 13px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      transition: border 0.15s;
+    }
+
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* DROPZONE FLYER */
+    .dropzone {
+      margin-top: 12px;
+      border: 1.5px dashed #475569;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .dropzone-preview {
+      max-height: 150px;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: none;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* PRESETS */
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .preset-chip {
+      font-size: 0.74rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .preset-chip:hover {
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 11px 18px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #082f49;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .btn-wa {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #052e16;
+    }
+
+    .btn-wa:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-mail {
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+      color: #fff;
+    }
+
+    .btn-outline {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+    }
+
+    /* HISTORY LIST */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      max-height: 410px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .history-item {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 13px;
+      cursor: pointer;
+      transition: 0.15s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .history-item:hover, .history-item.active {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .score-badge {
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .score-high { background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+    .score-mid { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .score-low { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+    /* RESULT PANEL */
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0;
+      padding: 14px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .pdf-frame {
+      width: 100%;
+      height: 690px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .msg-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .msg-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* PORTALS GRID */
+    .portals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .portal-card {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      max-width: 520px;
+      width: 100%;
+      padding: 22px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="/assets/foto-antonella.jpg" alt="Antonella" class="brand-avatar" />
+      <div>
+        <div class="brand-title">Agente de Búsqueda Laboral — Antonella Fernández</div>
+        <div class="brand-sub">Ciudadela (Límite CABA) • Recepción / Salud / Administración / Atención al Cliente</div>
+      </div>
+    </div>
+
+    <div class="status-pills">
+      <div class="pill" onclick="openGeminiModal()" title="Configurar IA de Google Gemini (Gratis)">
+        <span class="dot" id="geminiDot"></span>
+        <span id="geminiStatusText">IA: Motor Local Activo</span>
+      </div>
+      <div class="pill" onclick="switchTab('whatsapp')">
+        <span class="dot" id="waDot"></span>
+        <span id="waStatusText">WhatsApp: Desconectado</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" data-tab="analyzer" onclick="switchTab('analyzer')">
+      ⚡ 1. Adaptador de CV y Postulación a 1 Clic
+    </button>
+    <button class="tab-btn" data-tab="whatsapp" onclick="switchTab('whatsapp')">
+      📲 2. Bot de Canales de WhatsApp (QR)
+    </button>
+    <button class="tab-btn" data-tab="portals" onclick="switchTab('portals')">
+      🔎 3. Radar de Ofertas en Vivo (CABA y GBA Oeste)
+    </button>
+  </nav>
+
+  <main class="container">
+    <!-- TAB 1: ANALYZER & 1-CLICK APPLY -->
+    <section id="tab-analyzer" class="tab-panel active">
+      <div class="grid-main">
+        <!-- LEFT COLUMN: INPUT + HISTORY -->
+        <div>
+          <div class="card">
+            <div class="card-title">
+              <span>📥 Pegar Aviso o Subir Flyer de WhatsApp</span>
+            </div>
+            <p class="card-desc">
+              Pegá el texto de un canal de bolsa de trabajo o pegá con <strong>Ctrl + V</strong> la imagen/captura del flyer. El agente adapta el CV de Antonella y te prepara el envío a 1 clic.
+            </p>
+
+            <div class="presets">
+              <span class="preset-chip" onclick="loadSample('salud')">🏥 Ejemplo Clínica/Salud</span>
+              <span class="preset-chip" onclick="loadSample('admin')">🏢 Ejemplo Administrativa</span>
+              <span class="preset-chip" onclick="loadSample('comercio')">🛍️ Ejemplo Atención al Cliente</span>
+              <span class="preset-chip" onclick="loadSample('dataentry')">💻 Ejemplo Data Entry</span>
+            </div>
+
+            <textarea id="offerTextInput" rows="6" placeholder="Pegá acá la propuesta laboral del Canal de WhatsApp (ej: 'Buscamos recepcionista para consultorio en Caballito, enviar CV a... o al 11-xxxx-xxxx')..."></textarea>
+
+            <div class="dropzone" id="flyerDropzone" onclick="document.getElementById('flyerFileInput').click()">
+              <input type="file" id="flyerFileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)" />
+              <div id="dropzoneLabel" style="font-size:0.83rem; color:var(--text-muted);">
+                🖼️ <strong>Subir imagen / flyer</strong> del canal o presioná <strong>Ctrl + V</strong> para pegar una captura
+              </div>
+              <img id="flyerPreview" class="dropzone-preview" />
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin: 12px 0;">
+              <label style="font-size:0.84rem; display:flex; align-items:center; gap:7px; cursor:pointer;">
+                <input type="checkbox" id="includePhotoCheck" checked />
+                Incluir foto profesional de Antonella en el CV
+              </label>
+              <button type="button" class="preset-chip" onclick="clearInput()">Limpiar</button>
+            </div>
+
+            <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeOffer()">
+              ✨ Analizar Propuesta, Adaptar CV y Preparar Envío
+            </button>
+          </div>
+
+          <!-- HISTORIAL -->
+          <div class="card" style="margin-top: 18px;">
+            <div class="card-title">
+              <span>🗂️ Propuestas Analizadas y CVs Generados</span>
+              <span id="historyCount" style="font-size:0.8rem; color:var(--text-muted);">0</span>
+            </div>
+            <div class="history-list" id="historyList"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: ACTIVE OFFER & PDF PREVIEW -->
+        <div class="card" id="resultCard">
+          <div id="emptyState" style="text-align:center; padding: 60px 20px; color: var(--text-muted);">
+            <h3>Seleccioná o pegá una oferta laboral a la izquierda</h3>
+            <p style="margin-top:8px;">Verás acá el CV en PDF adaptado automáticamente y los botones de postulación en 1 clic.</p>
+          </div>
+
+          <div id="offerDetailView" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <span id="detailScoreBadge" class="score-badge score-high">95% Match</span>
+                  <span id="detailSource" style="font-size:0.78rem; color:var(--text-muted);">Canal WA</span>
+                  <span id="detailLocation" style="font-size:0.8rem; background:#1e293b; padding:3px 10px; border-radius:99px;">📍 CABA / GBA Oeste</span>
+                </div>
+                <h2 id="detailTitle" style="font-size:1.3rem; margin-top:8px;">Recepcionista de Clínica</h2>
+                <p id="detailReason" style="font-size:0.86rem; color:#cbd5e1; margin-top:4px;"></p>
+              </div>
+
+              <div style="display:flex; gap:8px;">
+                <a id="downloadPdfBtn" href="#" download class="btn btn-outline">
+                  ⬇️ Descargar CV PDF
+                </a>
+              </div>
+            </div>
+
+            <!-- 1-CLICK ACTION BUTTONS -->
+            <div class="action-bar" id="oneClickActions"></div>
+
+            <!-- MESSAGES & QUICK EDIT -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+              <div class="msg-box">
+                <div class="msg-label">
+                  <span>📲 Mensaje prearmado para WhatsApp / Mail</span>
+                  <button class="preset-chip" onclick="copyMessageText()">Copiar texto</button>
+                </div>
+                <textarea id="readyMessageBox" rows="4" style="font-size:0.82rem; margin-top:4px;"></textarea>
+              </div>
+
+              <div class="msg-box">
+                <div class="msg-label">
+                  <span>✏️ Ajuste rápido del Título y Perfil del CV</span>
+                  <button class="preset-chip" onclick="regenerateCurrentCV()">🔄 Actualizar PDF</button>
+                </div>
+                <input type="text" id="editHeadlineInput" placeholder="Título en el CV" style="margin-bottom:6px; padding:7px 10px; font-size:0.82rem;" />
+                <textarea id="editSummaryInput" rows="2" placeholder="Resumen profesional..." style="font-size:0.8rem; padding:7px 10px;"></textarea>
+              </div>
+            </div>
+
+            <!-- LIVE PDF VIEWER -->
+            <iframe id="pdfViewerFrame" class="pdf-frame" src=""></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: WHATSAPP BOT & CHANNELS -->
+    <section id="tab-whatsapp" class="tab-panel">
+      <div class="grid-main">
+        <div class="card">
+          <div class="card-title">📲 Conexión con WhatsApp (Escucha + Reenvío 1 Clic)</div>
+          <p class="card-desc">
+            Vinculá tu WhatsApp o el de Antonella escaneando el código QR. Cuando esté conectado:
+          </p>
+          <ul style="font-size:0.86rem; color:#cbd5e1; padding-left:18px; margin-bottom:16px; display:flex; flex-direction:column; gap:6px;">
+            <li><strong>Modo Francotirador desde el Celular:</strong> Mientras mirás cualquier <em>Canal de WhatsApp</em> de bolsas de trabajo, reenviá el flyer o texto a tu propio chat (o agregale <code>#cv</code>). El bot lo lee, adapta el CV de Antonella y te responde al instante en WhatsApp con el <strong>PDF nuevo + el link 1 clic al reclutador</strong>.</li>
+            <li><strong>Modo Automático:</strong> También escucha automáticamente los canales y grupos de empleo que marques a la derecha.</li>
+          </ul>
+
+          <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <button class="btn btn-wa" onclick="connectWhatsApp()">🔗 Generar QR / Conectar WhatsApp</button>
+            <button class="btn btn-outline" onclick="disconnectWhatsApp()">Desconectar</button>
+          </div>
+
+          <div id="qrContainer" style="text-align:center; padding:18px; background:#0f172a; border-radius:12px; border:1px solid var(--border);">
+            <p style="color:var(--text-muted); font-size:0.88rem;">Hacé clic en "Generar QR / Conectar WhatsApp" para vincular.</p>
+          </div>
+
+          <div style="margin-top:16px;">
+            <label style="font-size:0.83rem; color:var(--text-muted); display:block; margin-bottom:5px;">
+              Números de WhatsApp que reciben los CVs listos (Antonella: 11-6530-7320 y Joni: 11-3913-0073):
+            </label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="notifyNumberInput" value="5491165307320, 5491139130073" />
+              <button class="btn btn-outline" onclick="saveWaConfig()">Guardar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📡 Canales y Grupos de Bolsa de Trabajo en Buenos Aires</div>
+          <p class="card-desc">
+            Activá los grupos o canales detectados en tu cuenta para que el agente los lea automáticamente apenas publiquen una oferta.
+          </p>
+
+          <div id="monitoredChatsList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
+            <p style="font-size:0.85rem; color:var(--text-muted);">Conectá WhatsApp para ver tus grupos y canales activos.</p>
+          </div>
+
+          <div style="border-top:1px solid var(--border); padding-top:16px;">
+            <h4 style="font-size:0.92rem; margin-bottom:8px;">💡 Tip para Canales de WhatsApp ("Pestaña Novedades"):</h4>
+            <p style="font-size:0.84rem; color:#cbd5e1;">
+              En los Canales de WhatsApp de empleos de Buenos Aires (como <em>Empleos CABA y GBA</em>, <em>Bolsa de Trabajo Zona Oeste / Morón / Ramos Mejía</em>, <em>Empleos Salud y Clínicas AMBA</em>), muchas ofertas suben como <strong>imagen (flyer)</strong>. Si activás arriba la <strong>API Gratuita de Gemini</strong>, el agente lee la foto del flyer completa (puesto, zona, mail, asunto y WhatsApp del reclutador) sin que tengas que tipear nada.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: LIVE PORTALS RADAR -->
+    <section id="tab-portals" class="tab-panel">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div class="card-title">🔎 Radar en Vivo de Ofertas en Buenos Aires (CABA y GBA Zona Oeste)</div>
+            <p class="card-desc" style="margin-bottom:0;">
+              Buscá ofertas publicadas recientemente para los perfiles fuertes de Antonella y generá su CV adaptado con 1 clic.
+            </p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" style="width:auto;" onclick="searchPortals('all')">🚀 Escanear Ofertas Nuevas Ahora</button>
+          </div>
+        </div>
+
+        <div class="presets" style="margin-top:14px;">
+          <span class="preset-chip" onclick="searchPortals('recepcionista-salud-caba')">🏥 Recepcionista Salud / Clínica (CABA)</span>
+          <span class="preset-chip" onclick="searchPortals('recepcionista-oeste')">📍 Recepcionista / Admin (GBA Oeste)</span>
+          <span class="preset-chip" onclick="searchPortals('admision-caba')">🩺 Admisión / Consultorios (CABA)</span>
+          <span class="preset-chip" onclick="searchPortals('atencion-cliente-oeste')">🗂️ Administrativa (GBA Oeste)</span>
+        </div>
+
+        <div id="portalsResults" class="portals-grid">
+          <div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted);">
+            Tocá <strong>"Escanear Ofertas Nuevas Ahora"</strong> para traer avisos reales de Capital Federal y Zona Oeste.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL GEMINI API KEY -->
+  <div class="modal-backdrop" id="geminiModal">
+    <div class="modal">
+      <h3 style="margin-bottom:8px;">🤖 Configurar IA Google Gemini (100% Gratis)</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+        Con la clave gratuita de Google AI Studio, el agente usa <strong>Gemini 2.5 Flash con Visión</strong> para leer imágenes de flyers de canales de WhatsApp y redactar cada CV a medida.
+      </p>
+      <ol style="font-size:0.83rem; color:#cbd5e1; padding-left:18px; margin-bottom:14px; display:flex; flex-direction:column; gap:5px;">
+        <li>Entrá a <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary);">aistudio.google.com/app/apikey</a></li>
+        <li>Tocá <strong>"Create API Key"</strong> y pegala acá abajo:</li>
+      </ol>
+      <input type="password" id="geminiKeyInput" placeholder="AIzaSy..." style="margin-bottom:14px;" />
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-outline" onclick="closeGeminiModal()">Cancelar</button>
+        <button class="btn btn-primary" style="width:auto;" onclick="saveGeminiKey()">Guardar API Key</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let historyItems = [];
+    let currentRecord = null;
+    let selectedFlyerFile = null;
+
+    const SAMPLES = {
+      salud: `BÚSQUEDA LABORAL - CLÍNICA / CENTRO MÉDICO EN CABALLITO (CABA)
+Incorporamos Recepcionista / Admisión de Pacientes para guardia y consultorios externos.
+Requisitos:
+- Experiencia en recepción de clínicas, sanatorios o centros de salud.
+- Validación de obras sociales y prepagas, asignación de turnos y carga de historias clínicas en sistema.
+- Residir en CABA o Zona Oeste con fácil acceso.
+Enviar CV por WhatsApp al 11-5544-3322 o por mail a seleccion@clinicacaballito.com.ar con ASUNTO: RECEPCIONISTA ADMISION`,
+      admin: `IMPORTANTE EMPRESA EN RAMOS MEJÍA (GBA OESTE)
+Busca Recepcionista Administrativa Full Time (Lunes a Viernes 9 a 18 hs).
+Tareas: Atención telefónica y presencial, manejo de agenda, carga de datos en sistema y planillas de Excel, control de documentación y stock de oficina.
+Enviar CV a rrhh@empresaoeste.com.ar indicando en el asunto: REF ADMINISTRATIVA RAMOS o al WhatsApp +54 9 11 6789-1234.`,
+      comercio: `CENTRO DE ESTÉTICA Y ODONTOLOGÍA EN DEVOTO / LINIERS
+Buscamos Recepcionista y Atención al Cliente con excelente presencia y trato cálido.
+Tareas: Recepción de pacientes/clientes, confirmación de turnos por WhatsApp, cobros/caja básica y organización de agendas.
+Mandar CV por WhatsApp al 11-3322-8899.`,
+      dataentry: `BÚSQUEDA OPERADORA DE DATA ENTRY / CARGA DE DATOS (MODALIDAD HÍBRIDA / REMOTO)
+Buscamos perfil detallista con experiencia comprobable en carga masiva de datos, validación de registros en plataformas web y manejo de planillas Excel.
+Enviar CV a talento@gestiondatosba.com con ASUNTO: DATA ENTRY BA`
+    };
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    function loadSample(key) {
+      document.getElementById('offerTextInput').value = SAMPLES[key] || '';
+    }
+
+    function clearInput() {
+      document.getElementById('offerTextInput').value = '';
+      selectedFlyerFile = null;
+      document.getElementById('flyerFileInput').value = '';
+      document.getElementById('flyerPreview').style.display = 'none';
+      document.getElementById('dropzoneLabel').textContent = '🖼️ Subir imagen / flyer del canal o presioná Ctrl + V para pegar una captura';
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) setFlyerFile(file);
+    }
+
+    function setFlyerFile(file) {
+      selectedFlyerFile = file;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = document.getElementById('flyerPreview');
+        img.src = ev.target.result;
+        img.style.display = 'block';
+        document.getElementById('dropzoneLabel').textContent = '✅ Imagen cargada: ' + file.name;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Permitir pegar imagen directo con Ctrl+V desde WhatsApp Web
+    window.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items || [];
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            setFlyerFile(file);
+            switchTab('analyzer');
+          }
+        }
+      }
+    });
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        const geminiDot = document.getElementById('geminiDot');
+        const geminiText = document.getElementById('geminiStatusText');
+        if (data.hasGeminiKey) {
+          geminiDot.className = 'dot green';
+          geminiText.textContent = 'IA: Gemini 2.5 Flash (Visión Activa)';
+        } else {
+          geminiDot.className = 'dot amber';
+          geminiText.textContent = 'IA: Motor Local (Clic para activar Gemini)';
+        }
+
+        updateWhatsAppUI(data.whatsapp);
+      } catch (e) {}
+    }
+
+    async function loadHistory() {
+      const res = await fetch('/api/history');
+      historyItems = await res.json();
+      renderHistoryList();
+      if (historyItems.length > 0 && !currentRecord) {
+        selectRecord(historyItems[0]);
+      }
+    }
+
+    function renderHistoryList() {
+      document.getElementById('historyCount').textContent = `${historyItems.length} ofertas`;
+      const container = document.getElementById('historyList');
+      if (historyItems.length === 0) {
+        container.innerHTML = `<div style="font-size:0.84rem; color:var(--text-muted); text-align:center; padding:16px;">Todavía no hay ofertas analizadas.</div>`;
+        return;
+      }
+
+      container.innerHTML = historyItems.map(item => {
+        const score = item.analysis?.matchScore || 75;
+        const badgeClass = score >= 80 ? 'score-high' : score >= 60 ? 'score-mid' : 'score-low';
+        const title = item.analysis?.jobDetails?.title || 'Recepcionista / Administrativa';
+        const loc = item.analysis?.jobDetails?.location || 'Buenos Aires';
+        const isActive = currentRecord && currentRecord.id === item.id;
+
+        return `
+          <div class="history-item ${isActive ? 'active' : ''}" onclick="selectRecordById('${item.id}')">
+            <div style="min-width:0;">
+              <div style="font-weight:700; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${item.applied ? '✅ ' : ''}${title}
+              </div>
+              <div style="font-size:0.76rem; color:var(--text-muted);">
+                ${loc} • ${new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+            <span class="score-badge ${badgeClass}">${score}%</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectRecordById(id) {
+      const found = historyItems.find(h => h.id === id);
+      if (found) selectRecord(found);
+    }
+
+    function selectRecord(record) {
+      currentRecord = record;
+      renderHistoryList();
+
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('offerDetailView').style.display = 'block';
+
+      const analysis = record.analysis || {};
+      const job = analysis.jobDetails || {};
+      const msgs = analysis.applicationMessages || {};
+      const tailored = analysis.tailoredCV || {};
+
+      const score = analysis.matchScore || 80;
+      const badge = document.getElementById('detailScoreBadge');
+      badge.textContent = `${score}% Match con Antonella`;
+      badge.className = 'score-badge ' + (score >= 80 ? 'score-high' : score >= 60 ? 'score-mid' : 'score-low');
+
+      document.getElementById('detailSource').textContent = record.source || 'Canal de WhatsApp';
+      document.getElementById('detailLocation').textContent = '📍 ' + (job.location || 'CABA / GBA Oeste');
+      document.getElementById('detailTitle').textContent = job.title || 'Recepcionista / Administrativa';
+      document.getElementById('detailReason').textContent = analysis.matchReason || '';
+
+      const pdfUrl = record.pdf?.publicUrl || '';
+      document.getElementById('pdfViewerFrame').src = pdfUrl;
+      const dlBtn = document.getElementById('downloadPdfBtn');
+      dlBtn.href = pdfUrl;
+      dlBtn.download = record.pdf?.fileName || 'CV_Antonella_Fernandez.pdf';
+
+      document.getElementById('readyMessageBox').value = msgs.whatsappText || msgs.emailBody || '';
+      document.getElementById('editHeadlineInput').value = tailored.headline || '';
+      document.getElementById('editSummaryInput').value = tailored.summary || '';
+
+      // Render 1-Click buttons
+      const actionsContainer = document.getElementById('oneClickActions');
+      let buttonsHtml = '';
+
+      if (job.contactPhone) {
+        const waUrl = `https://wa.me/${job.contactPhone}?text=${encodeURIComponent(msgs.whatsappText || '')}`;
+        buttonsHtml += `
+          <a href="${waUrl}" target="_blank" class="btn btn-wa" onclick="markApplied('${record.id}')">
+            📲 1-Clic: Abrir WhatsApp del Reclutador (${job.contactPhone})
+          </a>
+        `;
+      }
+
+      if (job.contactEmail) {
+        const subj = job.emailSubject || msgs.emailSubject || `CV - ${job.title} - Antonella Fernández`;
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(job.contactEmail)}&su=${encodeURIComponent(subj)}&body=${encodeURIComponent(msgs.emailBody || '')}`;
+        const mailtoUrl = `mailto:${job.contactEmail}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(msgs.emailBody || '')}`;
+        buttonsHtml += `
+          <a href="${gmailUrl}" target="_blank" class="btn btn-mail" onclick="markApplied('${record.id}')">
+            📧 1-Clic: Abrir en Gmail (${job.contactEmail})
+          </a>
+          <a href="${mailtoUrl}" class="btn btn-outline" onclick="markApplied('${record.id}')">
+            ✉️ App de Correo (Asunto: ${subj})
+          </a>
+        `;
+      }
+
+      if (job.applyUrl) {
+        buttonsHtml += `
+          <a href="${job.applyUrl}" target="_blank" class="btn btn-outline" onclick="markApplied('${record.id}')">
+            🔗 Abrir Link de la Oferta
+          </a>
+        `;
+      }
+
+      buttonsHtml += `
+        <button class="btn btn-outline" onclick="sendRecordToWhatsApp('${record.id}')" title="Te manda el PDF y el link al WhatsApp de Antonella">
+          📤 Mandar este CV al WhatsApp de Antonella
+        </button>
+      `;
+
+      actionsContainer.innerHTML = buttonsHtml;
+    }
+
+    async function analyzeOffer() {
+      const text = document.getElementById('offerTextInput').value;
+      const includePhoto = document.getElementById('includePhotoCheck').checked;
+      const btn = document.getElementById('analyzeBtn');
+
+      if (!text.trim() && !selectedFlyerFile) {
+        alert('Pegá el texto de la oferta o subí/pegá con Ctrl+V la imagen del flyer del canal de WhatsApp.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Analizando aviso y generando CV en PDF...';
+
+      try {
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('includePhoto', String(includePhoto));
+        if (selectedFlyerFile) {
+          formData.append('flyer', selectedFlyerFile);
+        }
+
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        historyItems.unshift(data);
+        selectRecord(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Analizar Propuesta, Adaptar CV y Preparar Envío';
+      }
+    }
+
+    async function regenerateCurrentCV() {
+      if (!currentRecord) return;
+      const headline = document.getElementById('editHeadlineInput').value;
+      const summary = document.getElementById('editSummaryInput').value;
+      const includePhoto = document.getElementById('includePhotoCheck').checked;
+
+      const tailoredCV = {
+        ...(currentRecord.analysis?.tailoredCV || {}),
+        headline,
+        summary
+      };
+
+      const res = await fetch(`/api/regenerate-cv/${currentRecord.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tailoredCV, includePhoto })
+      });
+      const updated = await res.json();
+      const idx = historyItems.findIndex(h => h.id === updated.id);
+      if (idx !== -1) historyItems[idx] = updated;
+      selectRecord(updated);
+    }
+
+    async function markApplied(id) {
+      await fetch(`/api/history/${id}/toggle-applied`, { method: 'POST' });
+      loadHistory();
+    }
+
+    function copyMessageText() {
+      const box = document.getElementById('readyMessageBox');
+      box.select();
+      navigator.clipboard.writeText(box.value);
+    }
+
+    // --- WHATSAPP FUNCTIONS ---
+    async function connectWhatsApp() {
+      document.getElementById('qrContainer').innerHTML = `<p style="color:var(--primary);">⏳ Generando código QR de WhatsApp...</p>`;
+      await fetch('/api/whatsapp/connect', { method: 'POST' });
+      pollWhatsAppState();
+    }
+
+    async function disconnectWhatsApp() {
+      const res = await fetch('/api/whatsapp/disconnect', { method: 'POST' });
+      const state = await res.json();
+      updateWhatsAppUI(state);
+    }
+
+    async function pollWhatsAppState() {
+      const res = await fetch('/api/whatsapp/state');
+      const state = await res.json();
+      updateWhatsAppUI(state);
+      if (state.status === 'connecting' || state.status === 'qr') {
+        setTimeout(pollWhatsAppState, 2500);
+      }
+    }
+
+    function updateWhatsAppUI(wa) {
+      if (!wa) return;
+      const dot = document.getElementById('waDot');
+      const text = document.getElementById('waStatusText');
+      const qrBox = document.getElementById('qrContainer');
+
+      if (wa.notifyNumber) {
+        document.getElementById('notifyNumberInput').value = wa.notifyNumber;
+      }
+
+      if (wa.status === 'connected') {
+        dot.className = 'dot green';
+        text.textContent = 'WhatsApp: Conectado';
+        qrBox.innerHTML = `
+          <div style="color:var(--success); font-weight:700; font-size:1rem;">✅ WhatsApp Vinculado Correctamente</div>
+          <p style="font-size:0.84rem; color:var(--text-muted); margin-top:6px;">
+            Cuenta: ${wa.connectedUser?.id || 'Activa'}<br/>
+            Ya podés reenviar cualquier flyer o aviso de un Canal de WhatsApp con <strong>#cv</strong> y recibirás el PDF adaptado en el celular.
+          </p>
+        `;
+      } else if (wa.status === 'qr' && wa.qrDataUrl) {
+        dot.className = 'dot amber';
+        text.textContent = 'WhatsApp: Esperando QR';
+        qrBox.innerHTML = `
+          <p style="font-size:0.86rem; margin-bottom:10px;">📱 Abrí WhatsApp en el celular ➔ <strong>Dispositivos vinculados</strong> ➔ <strong>Vincular un dispositivo</strong>:</p>
+          <img src="${wa.qrDataUrl}" alt="QR WhatsApp" style="border-radius:10px; border:4px solid #fff; max-width:240px;" />
+        `;
+      } else if (wa.status === 'connecting') {
+        dot.className = 'dot amber';
+        text.textContent = 'WhatsApp: Conectando...';
+      } else {
+        dot.className = 'dot';
+        text.textContent = 'WhatsApp: Desconectado';
+      }
+
+      const chatsBox = document.getElementById('monitoredChatsList');
+      if (wa.monitoredChats && wa.monitoredChats.length > 0) {
+        chatsBox.innerHTML = wa.monitoredChats.map(ch => `
+          <label style="display:flex; align-items:center; justify-content:space-between; background:#0f172a; padding:10px 14px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+            <div>
+              <strong style="font-size:0.88rem;">${ch.name}</strong>
+              <span style="font-size:0.75rem; color:var(--text-muted); margin-left:8px;">(${ch.type === 'channel' ? 'Canal' : 'Grupo'})</span>
+            </div>
+            <input type="checkbox" ${ch.enabled ? 'checked' : ''} onchange="toggleChat('${ch.id}', this.checked, '${ch.name.replace(/'/g, '')}')" />
+          </label>
+        `).join('');
+      }
+    }
+
+    async function toggleChat(chatId, enabled, name) {
+      const res = await fetch('/api/whatsapp/toggle-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId, enabled, name })
+      });
+      const state = await res.json();
+      updateWhatsAppUI(state);
+    }
+
+    async function saveWaConfig() {
+      const notifyNumber = document.getElementById('notifyNumberInput').value;
+      await fetch('/api/whatsapp/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notifyNumber })
+      });
+      alert('Número de notificación guardado.');
+    }
+
+    async function sendRecordToWhatsApp(id) {
+      const res = await fetch(`/api/whatsapp/send-record/${id}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        alert('✅ CV en PDF y link de postulación enviados por WhatsApp.');
+      }
+    }
+
+    // --- PORTALS RADAR ---
+    async function searchPortals(category = 'all') {
+      const container = document.getElementById('portalsResults');
+      container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--primary);">⏳ Buscando ofertas activas en CABA y GBA Zona Oeste...</div>`;
+
+      try {
+        const res = await fetch(`/api/portals/search?category=${encodeURIComponent(category)}`);
+        const data = await res.json();
+        const offers = data.offers || [];
+
+        if (offers.length === 0) {
+          container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text-muted);">No se encontraron ofertas en este momento. Probá otra categoría.</div>`;
+          return;
+        }
+
+        container.innerHTML = offers.map((of, i) => `
+          <div class="portal-card">
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--primary); font-weight:700; margin-bottom:4px;">
+                <span>${of.categoryLabel}</span>
+                <span>${of.source}</span>
+              </div>
+              <h4 style="font-size:0.98rem; margin-bottom:4px;">${of.title}</h4>
+              <div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:8px;">🏢 ${of.company} • 📍 ${of.location}</div>
+              <p style="font-size:0.8rem; color:var(--text-muted);">${of.snippet.slice(0, 160)}...</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" style="font-size:0.82rem; padding:9px 12px;" onclick='adaptPortalOffer(${JSON.stringify(of).replace(/'/g, "&#39;")})'>
+                ✨ Adaptar CV de Antonella
+              </button>
+              <a href="${of.url}" target="_blank" class="btn btn-outline" style="font-size:0.82rem; padding:9px 12px;">Ver</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--danger);">Error consultando portales: ${err.message}</div>`;
+      }
+    }
+
+    async function adaptPortalOffer(offer) {
+      switchTab('analyzer');
+      document.getElementById('offerTextInput').value = `Puesto: ${offer.title}\nEmpresa: ${offer.company}\nUbicación: ${offer.location}\nDetalle: ${offer.snippet}\nLink: ${offer.url}`;
+      await analyzeOffer();
+    }
+
+    // --- GEMINI MODAL ---
+    function openGeminiModal() {
+      document.getElementById('geminiModal').classList.add('open');
+    }
+
+    function closeGeminiModal() {
+      document.getElementById('geminiModal').classList.remove('open');
+    }
+
+    async function saveGeminiKey() {
+      const apiKey = document.getElementById('geminiKeyInput').value;
+      await fetch('/api/config/gemini-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey })
+      });
+      closeGeminiModal();
+      fetchStatus();
+    }
+
+    // INIT
+    fetchStatus();
+    loadHistory();
+  </script>
+</body>
+</html>

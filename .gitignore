@@ -1,0 +1,4 @@
+node_modules/
+.env
+data/wa-auth/
+public/generated-cvs/*.pdf
