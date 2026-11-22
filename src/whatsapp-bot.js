@@ -12,6 +12,13 @@ const {
   makeCacheableSignalKeyStore
 } = require('@whiskeysockets/baileys');
 
+const {
+  sendEmailApplication,
+  loadSentContacts,
+  saveSentContacts,
+  BLOCKED_PHONES
+} = require('./auto-applicant');
+
 const DEFAULT_BA_CHANNELS = [
   {
     name: 'EMPLEOS ARGENTINA (CABA, Ciudadela y GBA)',
@@ -116,15 +123,18 @@ class WhatsAppJobAssistant {
           this.savedMonitoredIds = new Set();
         }
         this.autoMonitorKeywords = raw.autoMonitorKeywords !== false;
+        this.autoApplyEnabled = raw.autoApplyEnabled !== false;
         this.notifyNumber = raw.notifyNumber || '120363415618148219@g.us';
       } else {
         this.savedMonitoredIds = new Set(['120363415618148219@g.us']);
         this.autoMonitorKeywords = true;
+        this.autoApplyEnabled = true;
         this.notifyNumber = '120363415618148219@g.us';
       }
     } catch (e) {
       this.savedMonitoredIds = new Set(['120363415618148219@g.us']);
       this.autoMonitorKeywords = true;
+      this.autoApplyEnabled = true;
       this.notifyNumber = '120363415618148219@g.us';
     }
   }
@@ -138,6 +148,7 @@ class WhatsAppJobAssistant {
           {
             monitoredIds: Array.from(this.savedMonitoredIds),
             autoMonitorKeywords: this.autoMonitorKeywords,
+            autoApplyEnabled: this.autoApplyEnabled,
             notifyNumber: this.notifyNumber
           },
           null,
@@ -156,6 +167,7 @@ class WhatsAppJobAssistant {
       connectedUser: this.connectedUser,
       notifyNumber: this.notifyNumber,
       autoMonitorKeywords: this.autoMonitorKeywords,
+      autoApplyEnabled: this.autoApplyEnabled,
       monitoredChats: Array.from(this.monitoredChats.values())
     };
   }
@@ -474,13 +486,83 @@ class WhatsAppJobAssistant {
     }
   }
 
+  /**
+   * Envía automáticamente el CV en PDF al WhatsApp del reclutador si el número es real y no fue contactado antes
+   */
+  async autoSendWhatsAppToRecruiter(record) {
+    const job = record?.analysis?.jobDetails || {};
+    const msgs = record?.analysis?.applicationMessages || {};
+    const pdf = record?.pdf;
+    const phone = String(job.contactPhone || '').replace(/\D/g, '');
+
+    if (!phone || phone.length < 10) {
+      return { sent: false, reason: 'El aviso no incluye número de WhatsApp' };
+    }
+    if (BLOCKED_PHONES.has(phone)) {
+      return { sent: false, reason: 'Número de prueba o propio ignorado' };
+    }
+    if (!this.sock || this.status !== 'connected') {
+      return { sent: false, reason: 'WhatsApp desconectado' };
+    }
+
+    const history = loadSentContacts();
+    if (history.phones[phone]) {
+      return {
+        sent: false,
+        alreadySent: true,
+        reason: `Ya se había enviado CV al WhatsApp +${phone} el ${new Date(history.phones[phone].sentAt).toLocaleDateString('es-AR')}`
+      };
+    }
+
+    try {
+      const check = await this.sock.onWhatsApp(phone);
+      const exists = Array.isArray(check) && check[0]?.exists;
+      const recruiterJid = exists ? check[0].jid : `${phone}@s.whatsapp.net`;
+
+      if (!exists) {
+        return { sent: false, reason: `El número +${phone} no tiene cuenta activa de WhatsApp` };
+      }
+
+      const introText =
+        msgs.whatsappText ||
+        `Hola! Qué tal? Mi nombre es Antonella Solange Fernández, vi la búsqueda de *${job.title || 'Recepcionista / Administrativa'}* y me interesa postularme. Cuento con experiencia comprobable desde 2021 en recepción, atención al público, admisión, turnos y sistemas informáticos (actualmente en UPA 4). Resido en Ciudadela (límite con CABA) con disponibilidad inmediata. Adjunto mi CV actualizado. Muchas gracias!`;
+
+      const sent1 = await this.sock.sendMessage(recruiterJid, { text: introText });
+      if (sent1?.key?.id) this.sentMessageIds.add(sent1.key.id);
+
+      if (pdf?.filePath && fs.existsSync(pdf.filePath)) {
+        const sent2 = await this.sock.sendMessage(recruiterJid, {
+          document: fs.readFileSync(pdf.filePath),
+          mimetype: 'application/pdf',
+          fileName: `CV_Antonella_Solange_Fernandez.pdf`,
+          caption: `CV - Antonella Solange Fernández (${job.title || 'Postulación'})`
+        });
+        if (sent2?.key?.id) this.sentMessageIds.add(sent2.key.id);
+      }
+
+      history.phones[phone] = {
+        sentAt: new Date().toISOString(),
+        jobTitle: job.title
+      };
+      saveSentContacts(history);
+
+      return {
+        sent: true,
+        recipient: `+${phone}`
+      };
+    } catch (err) {
+      console.error(`Error auto-enviando WA al reclutador +${phone}:`, err.message);
+      return { sent: false, reason: err.message };
+    }
+  }
+
   async sendReadyApplicationToUser(record, targetJidOverride = null) {
     if (!this.sock || this.status !== 'connected') return;
 
-    // Soporta múltiples números separados por coma (ej: el de Antonella y el tuyo) o IDs de grupo (@g.us)
+    // Soporta múltiples números separados por coma o el Grupo Exclusivo Empleos Anto (@g.us)
     const rawTargets = targetJidOverride
       ? [targetJidOverride]
-      : String(this.notifyNumber || '5491165307320')
+      : String(this.notifyNumber || '120363415618148219@g.us')
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean);
@@ -494,25 +576,71 @@ class WhatsAppJobAssistant {
     const job = analysis.jobDetails || {};
     const msgs = analysis.applicationMessages || {};
 
-    let oneClickSection = '';
-    if (job.contactPhone) {
-      const waLink = `https://wa.me/${job.contactPhone}?text=${encodeURIComponent(msgs.whatsappText || '')}`;
-      oneClickSection += `\n📲 *POSTULAR POR WHATSAPP (1 CLIC):*\n${waLink}\n_(Tocá el link, se abre el chat con el mensaje ya escrito, solo adjuntale el PDF de acá abajo)_`;
-    }
-    if (job.contactEmail) {
-      oneClickSection += `\n\n📧 *POSTULAR POR EMAIL:*\n• *Para:* ${job.contactEmail}\n• *Asunto:* ${job.emailSubject || msgs.emailSubject}`;
-    }
-    if (job.applyUrl) {
-      oneClickSection += `\n\n🔗 *LINK DE LA OFERTA:*\n${job.applyUrl}`;
+    // 1. Ejecutar auto-postulación si autoApplyEnabled está activo y el match >= 65%
+    let waAutoResult = null;
+    let emailAutoResult = null;
+
+    if (this.autoApplyEnabled && (analysis.matchScore >= 65 || record.forceAutoApply)) {
+      if (job.contactPhone) {
+        waAutoResult = await this.autoSendWhatsAppToRecruiter(record);
+      }
+      if (job.contactEmail && record.profile) {
+        emailAutoResult = await sendEmailApplication({
+          toEmail: job.contactEmail,
+          subject: job.emailSubject || msgs.emailSubject || `CV - ${job.title} - Antonella Solange Fernández`,
+          bodyText: msgs.emailBody,
+          pdfPath: pdf?.filePath,
+          pdfFileName: `CV_Antonella_Solange_Fernandez.pdf`,
+          profile: record.profile
+        });
+      }
     }
 
+    // 2. Armar el reporte de envío para el grupo "Empleos Anto 🤪"
+    const deliveryLines = [];
+    if (waAutoResult?.sent) {
+      deliveryLines.push(`✅ *CV ENVIADO AUTOMÁTICAMENTE POR WHATSAPP A:* ${waAutoResult.recipient}`);
+      record.applied = true;
+    } else if (job.contactPhone) {
+      const waLink = `https://wa.me/${job.contactPhone}?text=${encodeURIComponent(msgs.whatsappText || '')}`;
+      deliveryLines.push(
+        `📲 *WhatsApp del aviso (+${job.contactPhone}):* ${waAutoResult?.reason || 'Listo para enviar'}\n👉 ${waLink}`
+      );
+    }
+
+    if (emailAutoResult?.sent) {
+      deliveryLines.push(
+        `✅ *CV ENVIADO AUTOMÁTICAMENTE POR EMAIL A:* ${emailAutoResult.recipient}\n   • *Asunto usado:* ${emailAutoResult.subject}`
+      );
+      record.applied = true;
+    } else if (job.contactEmail) {
+      deliveryLines.push(
+        `📧 *Email del aviso:* ${job.contactEmail} (Asunto: *${job.emailSubject || msgs.emailSubject}*)\n   _(${emailAutoResult?.reason || 'Listo para enviar'})_`
+      );
+    }
+
+    if (job.applyUrl) {
+      deliveryLines.push(`🔗 *Portal / Link de la oferta:* ${job.applyUrl}`);
+    }
+
+    if (deliveryLines.length === 0) {
+      deliveryLines.push(`ℹ️ _El aviso no especificó teléfono ni email de texto (ver flyer o link)._`);
+    }
+
+    const headerBanner =
+      waAutoResult?.sent || emailAutoResult?.sent
+        ? `🚀 *POSTULACIÓN AUTOMÁTICA REALIZADA (${analysis.matchScore}% Match)*`
+        : `🎯 *NUEVA OFERTA DETECTADA PARA ANTONELLA (${analysis.matchScore}% Match)*`;
+
     const summaryMsg =
-      `🎯 *MATCH LABORAL PARA ANTONELLA (${analysis.matchScore}%)*\n\n` +
+      `${headerBanner}\n\n` +
       `📌 *Puesto:* ${job.title || 'Recepcionista / Administrativa'}\n` +
-      `📍 *Zona:* ${job.location || 'Buenos Aires'}\n` +
-      `💡 *Por qué aplica:* ${analysis.matchReason || 'Perfil compatible'}\n` +
-      `${oneClickSection}\n\n` +
-      `📄 *Abajo te adjunto el CV en PDF ya modificado y adaptado para este puesto:*`;
+      `🏢 *Origen / Empresa:* ${record.source || job.company || 'Canal Bolsa de Trabajo BA'}\n` +
+      `📍 *Zona:* ${job.location || 'CABA / GBA Oeste'}\n` +
+      `💡 *Detalle:* ${analysis.matchReason || 'Perfil compatible'}\n\n` +
+      `📬 *REPORTE DE ENVÍO DEL CV:*\n` +
+      `${deliveryLines.join('\n\n')}\n\n` +
+      `📄 *Abajo te dejo copia del CV en PDF que se preparó/envió para esta búsqueda:*`;
 
     const pdfBuffer = pdf?.filePath && fs.existsSync(pdf.filePath) ? fs.readFileSync(pdf.filePath) : null;
 

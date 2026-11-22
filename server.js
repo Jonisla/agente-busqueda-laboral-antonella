@@ -61,6 +61,7 @@ async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 
     source,
     rawText: text,
     analysis,
+    profile,
     pdf: {
       fileName: pdf.fileName,
       filePath: pdf.filePath,
@@ -93,9 +94,33 @@ app.get('/api/status', (req, res) => {
     geminiKeyMasked: process.env.GEMINI_API_KEY
       ? process.env.GEMINI_API_KEY.slice(0, 6) + '...' + process.env.GEMINI_API_KEY.slice(-4)
       : '',
+    hasGmailConfig: Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
+    gmailUser: process.env.GMAIL_USER || '',
     profile,
     whatsapp: waAssistant.getState(),
     portalCategories: SEARCH_QUERIES
+  });
+});
+
+app.post('/api/config/gmail', (req, res) => {
+  const { gmailUser, gmailAppPassword } = req.body;
+  process.env.GMAIL_USER = (gmailUser || '').trim();
+  process.env.GMAIL_APP_PASSWORD = (gmailAppPassword || '').replace(/\s+/g, '');
+
+  let envContent = '';
+  if (fs.existsSync(ENV_PATH)) {
+    envContent = fs.readFileSync(ENV_PATH, 'utf8');
+  }
+  const lines = envContent
+    .split('\n')
+    .filter((l) => !l.startsWith('GMAIL_USER=') && !l.startsWith('GMAIL_APP_PASSWORD='));
+  if (process.env.GMAIL_USER) lines.push(`GMAIL_USER=${process.env.GMAIL_USER}`);
+  if (process.env.GMAIL_APP_PASSWORD) lines.push(`GMAIL_APP_PASSWORD=${process.env.GMAIL_APP_PASSWORD}`);
+  fs.writeFileSync(ENV_PATH, lines.join('\n').trim() + '\n');
+
+  res.json({
+    ok: true,
+    hasGmailConfig: Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD)
   });
 });
 
@@ -264,7 +289,7 @@ app.post('/api/whatsapp/toggle-chat', (req, res) => {
 });
 
 app.post('/api/whatsapp/config', (req, res) => {
-  const { notifyNumber, autoMonitorKeywords } = req.body;
+  const { notifyNumber, autoMonitorKeywords, autoApplyEnabled } = req.body;
   if (notifyNumber) {
     waAssistant.notifyNumber = String(notifyNumber)
       .split(',')
@@ -273,6 +298,7 @@ app.post('/api/whatsapp/config', (req, res) => {
       .join(', ');
   }
   if (typeof autoMonitorKeywords === 'boolean') waAssistant.autoMonitorKeywords = autoMonitorKeywords;
+  if (typeof autoApplyEnabled === 'boolean') waAssistant.autoApplyEnabled = autoApplyEnabled;
   waAssistant.saveConfig();
   res.json(waAssistant.getState());
 });
