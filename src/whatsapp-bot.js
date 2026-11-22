@@ -479,9 +479,25 @@ class WhatsAppJobAssistant {
         source: sourceLabel
       });
 
-      // Si el match es bueno (>= 60) o fue pedido con #cv / reenviado por Joni o Antonella, enviamos el CV PDF adaptado a los dos por WhatsApp
-      if (result && (result.analysis?.matchScore >= 60 || hasTriggerTag || isSelfChat)) {
-        await this.sendReadyApplicationToUser(result);
+      // Siempre enviamos el reporte al grupo Empleos Anto (con el score), para que vean qué se detectó
+      // Auto-aplicación (enviar CV al reclutador) solo si score >= 65 o fue pedido con #cv
+      if (result && result.isJobOffer !== false) {
+        const score = result.analysis?.matchScore || 0;
+        if (score < 60 && !hasTriggerTag) {
+          // Score bajo: solo notificamos en el grupo sin enviar CV al reclutador
+          const job = result.analysis?.jobDetails || {};
+          const lowScoreMsg =
+            `⚠️ *OFERTA DETECTADA PERO MATCH BAJO (${score}%)*\n\n` +
+            `📌 *Puesto:* ${job.title || 'Recepcionista / Administrativa'}\n` +
+            `📍 *Zona:* ${job.location || 'Buenos Aires'}\n` +
+            `💡 *Motivo:* ${result.analysis?.matchReason || 'No coincide suficientemente con el perfil de Antonella'}\n\n` +
+            `📄 _El CV no se envió automáticamente. Si querés forzar el envío, reenviá el aviso con #cv._`;
+          const sent = await this.sock.sendMessage(remoteJid, { text: lowScoreMsg });
+          if (sent?.key?.id) this.sentMessageIds.add(sent.key.id);
+        } else {
+          // Score bueno o pedido con #cv: enviamos el CV adaptado y el reporte completo
+          await this.sendReadyApplicationToUser(result);
+        }
       }
     }
   }
