@@ -368,7 +368,9 @@ app.post('/api/whatsapp/send-record/:id', async (req, res) => {
     if (waAssistant.status !== 'connected') {
       return res.status(400).json({ error: 'WhatsApp no está conectado. Escaneá el QR primero.' });
     }
+    console.log(`[API] send-record llamado para ${req.params.id}, score=${record.analysis?.matchScore}, autoApply=${waAssistant.autoApplyEnabled}`);
     await waAssistant.sendReadyApplicationToUser(record);
+    console.log(`[API] send-record completado para ${req.params.id}`);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

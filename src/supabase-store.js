@@ -73,7 +73,11 @@ async function init() {
 }
 
 function loadSentContacts() {
-  return sentCache;
+  // Devolver copia para no modificar sentCache antes de saveSentContacts
+  return {
+    phones: { ...sentCache.phones },
+    emails: { ...sentCache.emails }
+  };
 }
 
 function saveSentContacts(data) {
@@ -95,10 +99,14 @@ function saveSentContacts(data) {
   writeLocal(SENT_CONTACTS_PATH, sentCache);
 
   if (ENABLED && newRows.length) {
+    console.log(`[STORE] Guardando ${newRows.length} contacto(s) nuevo(s) en Supabase: ${newRows.map(r => r.value).join(', ')}`);
     supabaseRequest('POST', 'sent_contacts', {
       body: newRows,
       prefer: 'resolution=merge-duplicates'
-    }).catch((err) => console.error('[STORE] Error guardando contactos:', err.message));
+    }).then(() => console.log('[STORE] Contactos guardados en Supabase OK'))
+      .catch((err) => console.error('[STORE] Error guardando contactos:', err.message));
+  } else {
+    console.log(`[STORE] saveSentContacts: ${newRows.length} nuevos, ENABLED=${ENABLED}`);
   }
 }
 
