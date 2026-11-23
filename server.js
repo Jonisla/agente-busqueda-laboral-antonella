@@ -390,7 +390,17 @@ function loadSeenPortalIds() {
 
 function saveSeenPortalIds(set) {
   fs.mkdirSync(path.dirname(SEEN_PORTAL_IDS_PATH), { recursive: true });
-  fs.writeFileSync(SEEN_PORTAL_IDS_PATH, JSON.stringify(Array.from(set).slice(-300), null, 2));
+  fs.writeFileSync(SEEN_PORTAL_IDS_PATH, JSON.stringify(Array.from(set).slice(-1000), null, 2));
+}
+
+function normalizeOfferPart(value) {
+  return String(value || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function offerDedupKey(of) {
+  return `key:${normalizeOfferPart(of.title)}|${normalizeOfferPart(of.company)}`;
 }
 
 async function runAutomaticRadarCycle() {
@@ -401,8 +411,11 @@ async function runAutomaticRadarCycle() {
     let sentCount = 0;
 
     for (const of of offers) {
-      if (seen.has(of.id)) continue;
+      const dedupKey = offerDedupKey(of);
+      if (seen.has(of.id) || seen.has(dedupKey)) continue;
       seen.add(of.id);
+      seen.add(dedupKey);
+      saveSeenPortalIds(seen);
 
       // Procesamos hasta 2 ofertas nuevas por ciclo para no saturar WhatsApp
       if (sentCount < 2) {
