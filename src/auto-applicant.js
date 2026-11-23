@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SENT_CONTACTS_PATH = path.join(__dirname, '..', 'data', 'sent-contacts.json');
+const { loadSentContacts, saveSentContacts } = require('./supabase-store');
 
 const BLOCKED_PHONES = new Set([
   '5491165307320', // Antonella
@@ -23,20 +23,6 @@ const BLOCKED_EMAILS = new Set([
 
 const SENDER_EMAIL = 'afernand1995@gmail.com';
 const SENDER_NAME = 'Antonella Solange Fernández';
-
-function loadSentContacts() {
-  try {
-    if (fs.existsSync(SENT_CONTACTS_PATH)) {
-      return JSON.parse(fs.readFileSync(SENT_CONTACTS_PATH, 'utf8'));
-    }
-  } catch (e) {}
-  return { phones: {}, emails: {} };
-}
-
-function saveSentContacts(data) {
-  fs.mkdirSync(path.dirname(SENT_CONTACTS_PATH), { recursive: true });
-  fs.writeFileSync(SENT_CONTACTS_PATH, JSON.stringify(data, null, 2));
-}
 
 /**
  * Verifica si ya se envió un CV a este email o teléfono consultando el historial de ofertas

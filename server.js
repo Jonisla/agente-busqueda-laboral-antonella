@@ -9,6 +9,7 @@ const { analyzeOfferAndTailorCV } = require('./src/ai-agent');
 const { generateTailoredPDF, buildCVHtml } = require('./src/cv-generator');
 const { SEARCH_QUERIES, fetchPortalOffers, fetchOfferDetail } = require('./src/portal-scraper');
 const { WhatsAppJobAssistant } = require('./src/whatsapp-bot');
+const { init: initStore, loadSeenPortalIds, saveSeenPortalIds } = require('./src/supabase-store');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
@@ -377,22 +378,6 @@ app.post('/api/whatsapp/send-record/:id', async (req, res) => {
 const PORT = process.env.PORT || 3456;
 
 // --- RADAR AUTOMÁTICO 24/7 EN SEGUNDO PLANO ---
-const SEEN_PORTAL_IDS_PATH = path.join(__dirname, 'data', 'seen-portal-offers.json');
-
-function loadSeenPortalIds() {
-  try {
-    if (fs.existsSync(SEEN_PORTAL_IDS_PATH)) {
-      return new Set(JSON.parse(fs.readFileSync(SEEN_PORTAL_IDS_PATH, 'utf8')));
-    }
-  } catch (e) {}
-  return new Set();
-}
-
-function saveSeenPortalIds(set) {
-  fs.mkdirSync(path.dirname(SEEN_PORTAL_IDS_PATH), { recursive: true });
-  fs.writeFileSync(SEEN_PORTAL_IDS_PATH, JSON.stringify(Array.from(set).slice(-1000), null, 2));
-}
-
 function normalizeOfferPart(value) {
   return String(value || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -456,6 +441,7 @@ setInterval(async () => {
 }, 5 * 60 * 1000);
 
 app.listen(PORT, async () => {
+  await initStore();
   console.log(`\n========================================================`);
   console.log(`🚀 Agente de Búsqueda Laboral (Antonella) corriendo en:`);
   console.log(`👉 http://localhost:${PORT}`);
