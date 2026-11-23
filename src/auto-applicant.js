@@ -21,6 +21,9 @@ const BLOCKED_EMAILS = new Set([
   'talento@gestiondatosba.com'
 ]);
 
+const SENDER_EMAIL = 'afernand1995@gmail.com';
+const SENDER_NAME = 'Antonella Solange Fernández';
+
 function loadSentContacts() {
   try {
     if (fs.existsSync(SENT_CONTACTS_PATH)) {
@@ -57,8 +60,8 @@ function alreadyContactedInHistory(email, phone) {
 }
 
 /**
- * Envía automáticamente el CV en PDF por Email al reclutador usando Resend (HTTP API)
- * Render bloquea SMTP saliente, por eso usamos Resend que usa HTTPS (puerto 443)
+ * Envía automáticamente el CV en PDF por Email al reclutador usando Brevo (HTTP API)
+ * Render bloquea SMTP saliente, por eso usamos la API HTTPS de Brevo (puerto 443)
  */
 async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFileName, profile }) {
   const cleanEmail = String(toEmail || '').trim().toLowerCase();
@@ -86,42 +89,47 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
     };
   }
 
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) {
+  const brevoApiKey = process.env.BREVO_API_KEY;
+  if (!brevoApiKey) {
     return {
       sent: false,
       needsConfig: true,
-      reason: 'Falta configurar RESEND_API_KEY para envío automático de correos. Creá una cuenta gratis en resend.com y agregá la API Key en Render.'
+      reason: 'Falta configurar BREVO_API_KEY para envío automático de correos. Generá una API key en Brevo y agregala en Render.'
     };
   }
 
   try {
-    const { Resend } = require('resend');
-    const resend = new Resend(resendApiKey);
+    const payload = {
+      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+      replyTo: { email: SENDER_EMAIL },
+      to: [{ email: cleanEmail }],
+      subject: subject || `CV - ${profile.fullName}`,
+      textContent: bodyText
+    };
 
-    const attachments = [];
     if (pdfPath && fs.existsSync(pdfPath)) {
-      const pdfBuffer = fs.readFileSync(pdfPath);
-      attachments.push({
-        filename: pdfFileName || 'CV_Antonella_Solange_Fernandez.pdf',
-        content: pdfBuffer.toString('base64')
-      });
+      payload.attachment = [{
+        name: pdfFileName || 'CV_Antonella_Solange_Fernandez.pdf',
+        content: fs.readFileSync(pdfPath).toString('base64')
+      }];
     }
 
-    const result = await resend.emails.send({
-      from: 'Antonella Solange Fernández <onboarding@resend.dev>',
-      replyTo: 'afernand1995@gmail.com',
-      to: [cleanEmail],
-      subject: subject || `CV - ${profile.fullName}`,
-      text: bodyText,
-      attachments: attachments.length > 0 ? attachments : undefined
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': brevoApiKey,
+        'Content-Type': 'application/json',
+        'accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
     });
 
-    if (result.error) {
-      throw new Error(result.error.message || JSON.stringify(result.error));
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.message || `HTTP ${response.status}`);
     }
 
-    console.log(`[EMAIL] Enviado a ${cleanEmail}, id: ${result.data?.id}`);
+    console.log(`[EMAIL] Enviado a ${cleanEmail}, messageId: ${result.messageId}`);
 
     history.emails[cleanEmail] = {
       sentAt: new Date().toISOString(),
@@ -133,13 +141,13 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
       sent: true,
       recipient: cleanEmail,
       subject,
-      messageId: result.data?.id
+      messageId: result.messageId
     };
   } catch (err) {
     console.error(`[EMAIL ERROR] ${cleanEmail}: ${err.message}`);
     return {
       sent: false,
-      reason: `Error Resend: ${err.message}`
+      reason: `Error Brevo: ${err.message}`
     };
   }
 }
