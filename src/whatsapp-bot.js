@@ -188,7 +188,12 @@ class WhatsAppJobAssistant {
 
   async start() {
     if (this.starting) return this.starting;
-    if (this.status === 'connecting' || this.status === 'connected') {
+    if (
+      this.status === 'connecting' ||
+      this.status === 'connected' ||
+      this.status === 'qr'
+    ) {
+      // Ya hay un socket activo (aunque esté esperando escaneo): no abrir otro
       return this.getState();
     }
 
