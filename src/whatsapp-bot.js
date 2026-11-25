@@ -186,6 +186,90 @@ class WhatsAppJobAssistant {
     };
   }
 
+  /**
+   * Reporte de estado que se responde en el grupo al escribir "@verificar".
+   * Los datos del radar los inyecta server.js con getRuntimeStats().
+   */
+  buildStatusReport() {
+    const stats = (this.getRuntimeStats && this.getRuntimeStats()) || {};
+    const seconds = Math.floor(process.uptime());
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const uptime = [days ? `${days}d` : null, hours ? `${hours}h` : null, `${minutes}m`]
+      .filter(Boolean)
+      .join(' ');
+
+    const memory = Math.round(process.memoryUsage().rss / 1024 / 1024);
+
+    let lastRadar = 'todavía sin ciclos';
+    if (stats.radarLastRun) {
+      lastRadar = new Date(stats.radarLastRun).toLocaleString('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    const connected = this.status === 'connected';
+    const number = this.connectedUser?.id ? this.connectedUser.id.split(':')[0] : '—';
+
+    const lines = [
+      '🟢 *BOT ACTIVO Y FUNCIONANDO*',
+      '',
+      `⏱ Encendido hace: *${uptime}*`,
+      `${connected ? '📱' : '🔴'} WhatsApp: *${connected ? `conectado (${number})` : this.status}*`,
+      `🛰 Último ciclo del radar: *${lastRadar}*`,
+      `🔎 Ofertas vistas en total: *${stats.seenOffers ?? 0}*`,
+      `📄 Ofertas procesadas: *${stats.processedOffers ?? 0}* · CVs enviados: *${stats.appliedOffers ?? 0}*`,
+      `📬 Reclutadores contactados: *${stats.emailsSent ?? 0}* mails · *${stats.phonesSent ?? 0}* WhatsApp`,
+      `💾 Memoria: *${memory} MB*`
+    ];
+
+    if (stats.commit) lines.push(`🔖 Versión: *${stats.commit}*`);
+    lines.push('', '_Escribí "@verificar" cuando quieras para volver a chequear._');
+
+    return lines.join('\n');
+  }
+
+  /** Envía un texto plano al chat/grupo de reportes (sin CV). */
+  async sendTextToNotify(text) {
+    if (!this.sock || this.status !== 'connected') return false;
+
+    const targets = String(this.notifyNumber || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    let delivered = false;
+
+    for (const target of targets) {
+      const jid = target.includes('@') ? target : `${target.replace(/\D/g, '')}@s.whatsapp.net`;
+      try {
+        const sent = await this.sock.sendMessage(jid, { text });
+        if (sent?.key?.id) this.sentMessageIds.add(sent.key.id);
+        delivered = true;
+      } catch (e) {
+        console.error(`Error enviando mensaje a ${jid}:`, e.message);
+      }
+    }
+
+    // Si no se pudo entregar en el grupo, mandarlo al chat propio para no perder el aviso
+    if (!delivered && this.sock.user?.id) {
+      try {
+        const sent = await this.sock.sendMessage(this.sock.user.id, { text });
+        if (sent?.key?.id) this.sentMessageIds.add(sent.key.id);
+        delivered = true;
+      } catch (e) {
+        console.error('No se pudo enviar el aviso al chat propio:', e.message);
+      }
+    }
+
+    return delivered;
+  }
+
   async start() {
     if (this.starting) return this.starting;
     if (
@@ -340,11 +424,11 @@ class WhatsAppJobAssistant {
           enabled: this.savedMonitoredIds.has(id)
         });
 
-        // Auto-detectar el grupo creado con Antonella si se llama "Empleos Anto", "Busqueda Laboral", "Trabajo Anto", etc.
-        if (
-          /empleos?\s*anto|b[uú]squeda\s*laboral|trabajo\s*anto|cv\s*anto/i.test(subject) &&
-          !this.notifyNumber.includes('@g.us')
-        ) {
+        // Auto-detectar el grupo de reportes si su nombre refiere a Antonella
+        // (ej: "Empleos Anto", "Búsqueda laboral Anto", "Trabajo Anto")
+        const looksLikeAntoGroup =
+          /anto/i.test(subject) && /empleo|laburo|trabajo|cv|b[uú]squeda/i.test(subject);
+        if (looksLikeAntoGroup && id !== this.notifyNumber) {
           this.notifyNumber = id;
           this.saveConfig();
           console.log(`🎯 Grupo exclusivo detectado automáticamente: "${subject}" (${id})`);
@@ -352,6 +436,18 @@ class WhatsAppJobAssistant {
       }
     } catch (e) {
       console.error('No se pudieron listar grupos:', e.message);
+    }
+
+    // Aviso si el grupo de reportes configurado no está entre los grupos de esta cuenta
+    if (
+      this.notifyNumber &&
+      this.notifyNumber.endsWith('@g.us') &&
+      !this.monitoredChats.has(this.notifyNumber)
+    ) {
+      console.warn(
+        `[WA] El grupo de reportes (${this.notifyNumber}) no está en esta cuenta. ` +
+          'Agregá este número al grupo "Empleos Anto" o configurá otro desde el panel.'
+      );
     }
   }
 
@@ -480,6 +576,19 @@ class WhatsAppJobAssistant {
         }
       } catch (e) {
         console.error('Error agregando canal por link:', e.message);
+      }
+      return;
+    }
+
+    // Comando de estado: "@verificar", "!estado", "#ping" → responde con el reporte del bot
+    const isStatusCommand = /(^|\s)[@!#/](verificar|estado|status|ping)\b/i.test(text);
+    if (isStatusCommand && (remoteJid.endsWith('@g.us') || msg.key.fromMe)) {
+      try {
+        const report = this.buildStatusReport();
+        const sent = await this.sock.sendMessage(remoteJid, { text: report });
+        if (sent?.key?.id) this.sentMessageIds.add(sent.key.id);
+      } catch (e) {
+        console.error('Error respondiendo @verificar:', e.message);
       }
       return;
     }

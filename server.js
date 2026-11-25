@@ -10,6 +10,7 @@ const { generateTailoredPDF, buildCVHtml } = require('./src/cv-generator');
 const { SEARCH_QUERIES, fetchPortalOffers, fetchOfferDetail } = require('./src/portal-scraper');
 const { WhatsAppJobAssistant } = require('./src/whatsapp-bot');
 const { init: initStore, loadSeenPortalIds, saveSeenPortalIds } = require('./src/supabase-store');
+const { loadSentContacts } = require('./src/auto-applicant');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
@@ -104,6 +105,34 @@ const waAssistant = new WhatsAppJobAssistant({
     return await processNewOffer({ text, imageBuffer, imageMimeType, source, includePhoto: true });
   }
 });
+
+// Estadísticas del radar que se muestran con "@verificar" en el grupo
+const radarStats = { lastRun: null, lastNewOffers: 0, lastSent: 0, cycles: 0 };
+
+waAssistant.getRuntimeStats = () => {
+  let contacts = { emails: {}, phones: {} };
+  try {
+    contacts = loadSentContacts() || contacts;
+  } catch (e) {}
+
+  let history = [];
+  try {
+    history = loadHistory() || [];
+  } catch (e) {}
+
+  return {
+    radarLastRun: radarStats.lastRun,
+    radarNewOffers: radarStats.lastNewOffers,
+    radarLastSent: radarStats.lastSent,
+    radarCycles: radarStats.cycles,
+    seenOffers: loadSeenPortalIds().size,
+    processedOffers: history.length,
+    appliedOffers: history.filter((h) => h && h.applied).length,
+    emailsSent: Object.keys(contacts.emails || {}).length,
+    phonesSent: Object.keys(contacts.phones || {}).length,
+    commit: (process.env.RENDER_GIT_COMMIT || '').slice(0, 7)
+  };
+};
 
 // --- ENDPOINTS API ---
 
@@ -396,12 +425,14 @@ async function runAutomaticRadarCycle() {
     const seen = loadSeenPortalIds();
     const offers = await fetchPortalOffers('all');
     let sentCount = 0;
+    let newOffers = 0;
 
     for (const of of offers) {
       const dedupKey = offerDedupKey(of);
       if (seen.has(of.id) || seen.has(dedupKey)) continue;
       seen.add(of.id);
       seen.add(dedupKey);
+      newOffers++;
       saveSeenPortalIds(seen);
 
       // Procesamos hasta 2 ofertas nuevas por ciclo para no saturar WhatsApp
@@ -424,6 +455,11 @@ async function runAutomaticRadarCycle() {
       }
     }
     saveSeenPortalIds(seen);
+
+    radarStats.lastRun = Date.now();
+    radarStats.lastNewOffers = newOffers;
+    radarStats.lastSent = sentCount;
+    radarStats.cycles++;
   } catch (err) {
     console.error('Error en ciclo de Radar Automático:', err.message);
   }
@@ -441,6 +477,20 @@ setInterval(async () => {
     } catch (e) {}
   }
 }, 5 * 60 * 1000);
+
+// Latido automático en el grupo para saber que el bot sigue vivo (12 h por defecto)
+const HEARTBEAT_HOURS = Number(process.env.HEARTBEAT_HOURS || 12);
+if (HEARTBEAT_HOURS > 0) {
+  setInterval(async () => {
+    if (waAssistant.status !== 'connected') return;
+    try {
+      await waAssistant.sendTextToNotify(waAssistant.buildStatusReport());
+      console.log('[WA] Latido de estado enviado al grupo');
+    } catch (e) {
+      console.error('Error enviando latido al grupo:', e.message);
+    }
+  }, HEARTBEAT_HOURS * 60 * 60 * 1000);
+}
 
 app.listen(PORT, async () => {
   await initStore();
