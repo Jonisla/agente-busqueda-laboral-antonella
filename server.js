@@ -449,6 +449,10 @@ app.listen(PORT, async () => {
   console.log(`👉 http://localhost:${PORT}`);
   console.log(`========================================================\n`);
 
+  // Reconectar WhatsApp automáticamente al arrancar (la sesión se restaura desde Supabase).
+  // Si no hay sesión guardada, queda en estado "qr" esperando el escaneo.
+  waAssistant.start().catch((e) => console.error('[WA] No se pudo iniciar automáticamente:', e.message));
+
   // Si todavía no hay ejemplos en el historial, generamos el CV maestro optimizado de muestra
   const history = loadHistory();
   if (history.length === 0) {

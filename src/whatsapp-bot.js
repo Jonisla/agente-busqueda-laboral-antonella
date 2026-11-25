@@ -20,6 +20,17 @@ const {
   alreadyContactedInHistory
 } = require('./auto-applicant');
 
+const {
+  restoreAuthDir,
+  trackFile,
+  trackDelete,
+  flushNow,
+  clearRemoteAuth
+} = require('./wa-auth-sync');
+
+// Baileys guarda cada llave como "<tipo>-<id>.json" saneando "/" y ":"
+const fixFileName = (file) => String(file || '').replace(/\//g, '__').replace(/:/g, '-');
+
 const DEFAULT_BA_CHANNELS = [
   {
     name: 'EMPLEOS ARGENTINA (CABA, Ciudadela y GBA)',
@@ -111,6 +122,8 @@ class WhatsAppJobAssistant {
     this.lastProcessedTime = 0;
     this.authDir = path.join(__dirname, '..', 'data', 'wa-auth');
     this.configPath = path.join(__dirname, '..', 'data', 'wa-config.json');
+    this.reconnectTimer = null;
+    this.starting = null;
     this.loadConfig();
   }
 
@@ -174,14 +187,57 @@ class WhatsAppJobAssistant {
   }
 
   async start() {
+    if (this.starting) return this.starting;
     if (this.status === 'connecting' || this.status === 'connected') {
       return this.getState();
     }
 
+    this.starting = this._start();
+    try {
+      return await this.starting;
+    } finally {
+      this.starting = null;
+    }
+  }
+
+  async _start() {
     this.status = 'connecting';
     fs.mkdirSync(this.authDir, { recursive: true });
 
+    // Restaurar la sesión guardada en Supabase ANTES de leer credenciales locales
+    try {
+      await restoreAuthDir(this.authDir);
+    } catch (e) {
+      console.error('[WA-AUTH] No se pudo restaurar la sesión:', e.message);
+    }
+
     const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
+
+    // Espejar a Supabase cada cambio de credenciales y de llaves
+    const persistKey = (type, id, value) => {
+      const name = fixFileName(`${type}-${id}.json`);
+      if (value === null || value === undefined) trackDelete(name);
+      else trackFile(this.authDir, name);
+    };
+
+    const originalKeysSet = state.keys.set.bind(state.keys);
+    state.keys.set = async (data) => {
+      await originalKeysSet(data);
+      try {
+        for (const type of Object.keys(data || {})) {
+          const bucket = data[type] || {};
+          for (const id of Object.keys(bucket)) persistKey(type, id, bucket[id]);
+        }
+      } catch (e) {
+        console.error('[WA-AUTH] Error encolando llaves:', e.message);
+      }
+    };
+
+    const originalSaveCreds = saveCreds;
+    const persistCreds = async () => {
+      await originalSaveCreds();
+      trackFile(this.authDir, 'creds.json');
+    };
     const silentLogger = pino({ level: 'silent' });
     let version = [2, 3000, 1023223821];
     try {
@@ -203,7 +259,7 @@ class WhatsAppJobAssistant {
       generateHighQualityLinkPreview: false
     });
 
-    this.sock.ev.on('creds.update', saveCreds);
+    this.sock.ev.on('creds.update', persistCreds);
 
     this.sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
@@ -221,6 +277,8 @@ class WhatsAppJobAssistant {
           name: this.sock.user?.name || 'WhatsApp Conectado'
         };
         console.log('WhatsApp conectado como:', this.connectedUser.id);
+        // Asegurar que la sesión quede guardada en Supabase cuanto antes
+        flushNow().catch(() => {});
         await this.refreshGroups();
         this.subscribeDefaultChannels();
       }
@@ -236,8 +294,15 @@ class WhatsAppJobAssistant {
           try {
             fs.rmSync(this.authDir, { recursive: true, force: true });
           } catch (e) {}
+          // El dispositivo fue desvinculado: borrar también la sesión remota
+          clearRemoteAuth().catch(() => {});
+          console.log('[WA] Sesión cerrada por WhatsApp (loggedOut). Se requiere escanear QR nuevamente.');
         } else if (shouldReconnect) {
-          setTimeout(() => this.start(), 4000);
+          if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            this.start();
+          }, 4000);
         }
       }
     });
@@ -733,6 +798,10 @@ class WhatsAppJobAssistant {
   }
 
   async disconnect() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.sock) {
       try {
         await this.sock.logout();
@@ -744,6 +813,8 @@ class WhatsAppJobAssistant {
     try {
       fs.rmSync(this.authDir, { recursive: true, force: true });
     } catch (e) {}
+    // Borrar la sesión persistida para que el próximo inicio pida QR limpio
+    await clearRemoteAuth().catch(() => {});
     return this.getState();
   }
 }
