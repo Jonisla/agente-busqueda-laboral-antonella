@@ -727,8 +727,13 @@ class WhatsAppJobAssistant {
       // salvo que se pidan explícitamente reenviando el aviso con #cv.
       if (result && result.isJobOffer !== false) {
         const score = Number(result.analysis?.matchScore || 0);
-        if (score < MIN_REPORT_SCORE && !forceReport) {
-          const job = result.analysis?.jobDetails || {};
+        const job = result.analysis?.jobDetails || {};
+        // Sin email, teléfono ni link no hay forma de postularse: el aviso no aporta nada
+        const actionable = Boolean(job.contactEmail || job.contactPhone || job.applyUrl);
+
+        if (!actionable && !forceReport) {
+          console.log(`[WA] Aviso sin email/teléfono/link - se descarta: ${job.title || 'sin puesto'}`);
+        } else if (score < MIN_REPORT_SCORE && !forceReport) {
           console.log(
             `[WA] Aviso descartado sin notificar (match ${score}% < ${MIN_REPORT_SCORE}%): ` +
             `${job.title || 'sin puesto'} · ${job.contactEmail || job.contactPhone || 'sin contacto'}`

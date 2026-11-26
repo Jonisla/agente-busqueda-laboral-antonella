@@ -61,6 +61,15 @@ function isRecent(record) {
 }
 
 /**
+ * Huella del flyer (imagen). Los avisos que son solo imagen no tienen texto ni
+ * contacto que permita deduplicarlos, así que se usa el hash del archivo.
+ */
+function imageFingerprint(imageBuffer) {
+  if (!imageBuffer || !imageBuffer.length) return '';
+  return crypto.createHash('sha1').update(imageBuffer).digest('hex');
+}
+
+/**
  * Huellas persistentes en el set de "ofertas vistas" (Supabase), con fecha embebida
  * para que caduquen solas aunque el historial de 100 registros se recicle.
  */
@@ -155,6 +164,7 @@ module.exports = {
   normalizePhone,
   textFingerprint,
   contactFingerprint,
+  imageFingerprint,
   discardContactKey,
   countDiscardedContacts,
   fingerprintSeenKey,

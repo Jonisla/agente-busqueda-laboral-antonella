@@ -16,6 +16,7 @@ const {
   DISCARDED_CONTACT_MIN_HITS,
   textFingerprint,
   contactFingerprint,
+  imageFingerprint,
   discardContactKey,
   countDiscardedContacts,
   fingerprintSeenKey,
@@ -65,8 +66,13 @@ async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 
 
   // Huellas persistentes (Supabase/local): sobreviven al deploy y al tope de 100 registros
   const textKey = textFingerprint(text);
+  const imageKey = imageFingerprint(imageBuffer);
   if (hasFreshFingerprint(seen, 'fp:text', textKey)) {
     console.log('[DEDUP] Aviso ya procesado (misma huella de texto) - se ignora');
+    return null;
+  }
+  if (hasFreshFingerprint(seen, 'fp:image', imageKey)) {
+    console.log('[DEDUP] Flyer ya procesado (misma imagen) - se ignora');
     return null;
   }
 
@@ -139,7 +145,8 @@ async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 
     rawText: text,
     fingerprint: {
       text: textKey,
-      contact: contactKey
+      contact: contactKey,
+      image: imageKey
     },
     analysis,
     profile,
@@ -158,8 +165,10 @@ async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 
   // Persistir huellas (Supabase/local) para no volver a avisar del mismo aviso/contacto
   const textSeenKey = fingerprintSeenKey('fp:text', textKey);
   const contactSeenKey = fingerprintSeenKey('fp:contact', contactKey);
+  const imageSeenKey = fingerprintSeenKey('fp:image', imageKey);
   if (textSeenKey) seen.add(textSeenKey);
   if (contactSeenKey) seen.add(contactSeenKey);
+  if (imageSeenKey) seen.add(imageSeenKey);
   if (discardKey && Number(analysis?.matchScore || 0) < MIN_REPORT_SCORE) {
     const strikes = countDiscardedContacts({ job: jobDetails, history: existingHistory, minScore: MIN_REPORT_SCORE }) + 1;
     if (strikes >= DISCARDED_CONTACT_MIN_HITS) {
