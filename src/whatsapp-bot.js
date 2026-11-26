@@ -260,8 +260,6 @@ class WhatsAppJobAssistant {
       .filter(Boolean)
       .join(' ');
 
-    const memory = Math.round(process.memoryUsage().rss / 1024 / 1024);
-
     let lastRadar = 'todavía sin ciclos';
     if (stats.radarLastRun) {
       lastRadar = new Date(stats.radarLastRun).toLocaleString('es-AR', {
@@ -277,19 +275,20 @@ class WhatsAppJobAssistant {
     const number = this.connectedUser?.id ? this.connectedUser.id.split(':')[0] : '—';
 
     const lines = [
-      '🟢 *BOT ACTIVO Y FUNCIONANDO*',
+      '🟢 *¡Todo bien! Estoy funcionando correctamente* ✅',
       '',
-      `⏱ Encendido hace: *${uptime}*`,
-      `${connected ? '📱' : '🔴'} WhatsApp: *${connected ? `conectado (${number})` : this.status}*`,
-      `🛰 Último ciclo del radar: *${lastRadar}*`,
-      `🔎 Ofertas vistas en total: *${stats.seenOffers ?? 0}*`,
-      `📄 Ofertas procesadas: *${stats.processedOffers ?? 0}* · CVs enviados: *${stats.appliedOffers ?? 0}*`,
-      `📬 Reclutadores contactados: *${stats.emailsSent ?? 0}* mails · *${stats.phonesSent ?? 0}* WhatsApp`,
-      `💾 Memoria: *${memory} MB*`
+      `⏱ Llevo encendido: *${uptime}*`,
+      `${connected ? '📱' : '🔴'} WhatsApp: *${connected ? `conectado` : 'desconectado'}* ${connected ? `(${number})` : ''}`,
+      `🛰 Última búsqueda automática: *${lastRadar}*`,
+      '',
+      '📊 *Resumen:*',
+      `• Ofertas encontradas: *${stats.seenOffers ?? 0}*`,
+      `• CVs preparados: *${stats.processedOffers ?? 0}*`,
+      `• CVs enviados a reclutadores: *${stats.appliedOffers ?? 0}*`,
+      `• Mails enviados: *${stats.emailsSent ?? 0}* · WhatsApp enviados: *${stats.phonesSent ?? 0}*`,
+      '',
+      '_Escribí "@verificar" cuando quieras volver a chequear._'
     ];
-
-    if (stats.commit) lines.push(`🔖 Versión: *${stats.commit}*`);
-    lines.push('', '_Escribí "@verificar" cuando quieras para volver a chequear._');
 
     return lines.join('\n');
   }
