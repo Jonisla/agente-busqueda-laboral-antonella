@@ -28,6 +28,66 @@ const {
   clearRemoteAuth
 } = require('./wa-auth-sync');
 
+const { generateTailoredPDF } = require('./cv-generator');
+const { MIN_REPORT_SCORE, MIN_AUTOAPPLY_SCORE } = require('./offer-dedupe');
+
+const HISTORY_PATH = path.join(__dirname, '..', 'data', 'offers-history.json');
+const PROFILE_PATH = path.join(__dirname, '..', 'data', 'antonella-profile.json');
+
+/** Actualiza un registro del historial en disco (id, applied, pdf regenerado, etc.). */
+function updateHistoryRecord(recordId, patch = {}) {
+  try {
+    if (!fs.existsSync(HISTORY_PATH)) return false;
+    const history = JSON.parse(fs.readFileSync(HISTORY_PATH, 'utf8'));
+    const idx = history.findIndex((h) => h.id === recordId);
+    if (idx === -1) return false;
+    history[idx] = { ...history[idx], ...patch };
+    fs.writeFileSync(HISTORY_PATH, JSON.stringify(history.slice(0, 100), null, 2));
+    return true;
+  } catch (e) {
+    console.error('[HISTORY] Error actualizando registro:', e.message);
+    return false;
+  }
+}
+
+/**
+ * Garantiza que el PDF del CV exista en disco antes de enviarlo.
+ * Si el archivo se perdió (deploy/reinicio en Render), lo regenera desde el CV adaptado.
+ */
+async function ensureRecordPdf(record) {
+  if (!record) return null;
+
+  const current = record.pdf;
+  if (current?.filePath && fs.existsSync(current.filePath)) return current;
+
+  const tailored = record.analysis?.tailoredCV;
+  if (!tailored) {
+    console.warn(`[PDF] ${record.id}: no hay PDF ni CV adaptado para regenerar`);
+    return null;
+  }
+
+  try {
+    const profile = record.profile || JSON.parse(fs.readFileSync(PROFILE_PATH, 'utf8'));
+    const generated = await generateTailoredPDF(
+      profile,
+      tailored,
+      record.analysis?.jobDetails?.title || 'Recepcionista_Administrativa',
+      { includePhoto: true }
+    );
+    record.pdf = {
+      fileName: generated.fileName,
+      filePath: generated.filePath,
+      publicUrl: generated.publicUrl
+    };
+    updateHistoryRecord(record.id, { pdf: record.pdf });
+    console.log(`[PDF] CV regenerado para ${record.id}: ${generated.fileName}`);
+    return record.pdf;
+  } catch (e) {
+    console.error(`[PDF] No se pudo regenerar el CV para ${record.id}:`, e.message);
+    return null;
+  }
+}
+
 // Baileys guarda cada llave como "<tipo>-<id>.json" saneando "/" y ":"
 const fixFileName = (file) => String(file || '').replace(/\//g, '__').replace(/:/g, '-');
 
@@ -599,6 +659,9 @@ class WhatsAppJobAssistant {
     const isDedicatedAlertGroup =
       remoteJid.endsWith('@g.us') && String(this.notifyNumber || '').includes(remoteJid);
     const hasTriggerTag = /#cv|#empleo|#oferta/i.test(text);
+    // Solo #cv fuerza el reporte de un aviso con match bajo (los hashtags #empleo/#oferta
+    // los usan los canales en casi todos sus posts y generaban ruido).
+    const forceReport = /#cv/i.test(text);
     const isMonitoredChannelOrGroup =
       this.savedMonitoredIds.has(remoteJid) ||
       (remoteJid.endsWith('@newsletter') && this.autoMonitorKeywords);
@@ -659,23 +722,20 @@ class WhatsAppJobAssistant {
         source: sourceLabel
       });
 
-      // Siempre enviamos el reporte al grupo Empleos Anto (con el score), para que vean qué se detectó
-      // Auto-aplicación (enviar CV al reclutador) solo si score >= 65 o fue pedido con #cv
+      // El reporte al grupo solo se manda si el match vale la pena.
+      // Los avisos con match bajo se descartan en silencio (solo quedan en el log),
+      // salvo que se pidan explícitamente reenviando el aviso con #cv.
       if (result && result.isJobOffer !== false) {
-        const score = result.analysis?.matchScore || 0;
-        if (score < 60 && !hasTriggerTag) {
-          // Score bajo: solo notificamos en el grupo sin enviar CV al reclutador
+        const score = Number(result.analysis?.matchScore || 0);
+        if (score < MIN_REPORT_SCORE && !forceReport) {
           const job = result.analysis?.jobDetails || {};
-          const lowScoreMsg =
-            `⚠️ *OFERTA DETECTADA PERO MATCH BAJO (${score}%)*\n\n` +
-            `📌 *Puesto:* ${job.title || 'Recepcionista / Administrativa'}\n` +
-            `📍 *Zona:* ${job.location || 'Buenos Aires'}\n` +
-            `💡 *Motivo:* ${result.analysis?.matchReason || 'No coincide suficientemente con el perfil de Antonella'}\n\n` +
-            `📄 _El CV no se envió automáticamente. Si querés forzar el envío, reenviá el aviso con #cv._`;
-          const sent = await this.sock.sendMessage(remoteJid, { text: lowScoreMsg });
-          if (sent?.key?.id) this.sentMessageIds.add(sent.key.id);
+          console.log(
+            `[WA] Aviso descartado sin notificar (match ${score}% < ${MIN_REPORT_SCORE}%): ` +
+            `${job.title || 'sin puesto'} · ${job.contactEmail || job.contactPhone || 'sin contacto'}`
+          );
         } else {
           // Score bueno o pedido con #cv: enviamos el CV adaptado y el reporte completo
+          if (forceReport) result.forceAutoApply = true;
           await this.sendReadyApplicationToUser(result);
         }
       }
@@ -743,6 +803,8 @@ class WhatsAppJobAssistant {
           caption: `CV - Antonella Solange Fernández (${job.title || 'Postulación'})`
         });
         if (sent2?.key?.id) this.sentMessageIds.add(sent2.key.id);
+      } else {
+        console.warn(`[WA] Aviso enviado a +${phone} SIN PDF adjunto (archivo no disponible)`);
       }
 
       history.phones[phone] = {
@@ -767,14 +829,14 @@ class WhatsAppJobAssistant {
     // Asegurar que el perfil esté disponible (si no, cargarlo)
     if (!record.profile) {
       try {
-        const fs = require('fs');
-        const path = require('path');
-        const profilePath = path.join(__dirname, '..', 'data', 'antonella-profile.json');
-        record.profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+        record.profile = JSON.parse(fs.readFileSync(PROFILE_PATH, 'utf8'));
       } catch (e) {
         console.error('Error cargando perfil:', e.message);
       }
     }
+
+    // Asegurar que el PDF del CV exista (se regenera si el deploy borró el archivo)
+    await ensureRecordPdf(record);
 
     // Soporta múltiples números separados por coma o el Grupo Exclusivo Empleos Anto (@g.us)
     const rawTargets = targetJidOverride
@@ -793,13 +855,13 @@ class WhatsAppJobAssistant {
     const job = analysis.jobDetails || {};
     const msgs = analysis.applicationMessages || {};
 
-    // 1. Ejecutar auto-postulación si autoApplyEnabled está activo y el match >= 65%
+    // 1. Ejecutar auto-postulación si autoApplyEnabled está activo y el match >= MIN_AUTOAPPLY_SCORE
     let waAutoResult = null;
     let emailAutoResult = null;
 
-    console.log(`[AUTO-APPLY] autoApplyEnabled=${this.autoApplyEnabled}, score=${analysis.matchScore}, contactEmail=${job.contactEmail}, contactPhone=${job.contactPhone}, hasProfile=${!!record.profile}`);
+    console.log(`[AUTO-APPLY] autoApplyEnabled=${this.autoApplyEnabled}, score=${analysis.matchScore}, contactEmail=${job.contactEmail}, contactPhone=${job.contactPhone}, hasProfile=${!!record.profile}, pdf=${!!pdf?.filePath}`);
 
-    if (this.autoApplyEnabled && (analysis.matchScore >= 65 || record.forceAutoApply)) {
+    if (this.autoApplyEnabled && (analysis.matchScore >= MIN_AUTOAPPLY_SCORE || record.forceAutoApply)) {
       if (job.contactPhone) {
         console.log(`[AUTO-APPLY] Enviando WhatsApp al reclutador: ${job.contactPhone}`);
         waAutoResult = await this.autoSendWhatsAppToRecruiter(record);
@@ -821,26 +883,7 @@ class WhatsAppJobAssistant {
         emailAutoResult = { sent: false, reason: 'Falta perfil de Antonella' };
       }
     } else {
-      console.log(`[AUTO-APPLY] Auto-apply desactivado o score < 65% (${analysis.matchScore})`);
-    }
-
-    // Persistir el flag "applied" en el historial
-    if (record.applied) {
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const HISTORY_PATH = path.join(__dirname, '..', 'data', 'offers-history.json');
-        if (fs.existsSync(HISTORY_PATH)) {
-          const history = JSON.parse(fs.readFileSync(HISTORY_PATH, 'utf8'));
-          const idx = history.findIndex(h => h.id === record.id);
-          if (idx !== -1) {
-            history[idx].applied = true;
-            fs.writeFileSync(HISTORY_PATH, JSON.stringify(history.slice(0, 100), null, 2));
-          }
-        }
-      } catch (e) {
-        console.error('Error persistiendo applied:', e.message);
-      }
+      console.log(`[AUTO-APPLY] Auto-apply desactivado o score < ${MIN_AUTOAPPLY_SCORE}% (${analysis.matchScore})`);
     }
 
     // 2. Armar el reporte de envío para el grupo "Empleos Anto 🤪"
@@ -848,6 +891,7 @@ class WhatsAppJobAssistant {
     if (waAutoResult?.sent) {
       deliveryLines.push(`✅ *CV ENVIADO AUTOMÁTICAMENTE POR WHATSAPP A:* ${waAutoResult.recipient}`);
       record.applied = true;
+      record.appliedAt = record.appliedAt || new Date().toISOString();
     } else if (job.contactPhone) {
       const waLink = `https://wa.me/${job.contactPhone}?text=${encodeURIComponent(msgs.whatsappText || '')}`;
       deliveryLines.push(
@@ -860,6 +904,7 @@ class WhatsAppJobAssistant {
         `✅ *CV ENVIADO AUTOMÁTICAMENTE POR EMAIL A:* ${emailAutoResult.recipient}\n   • *Asunto usado:* ${emailAutoResult.subject}`
       );
       record.applied = true;
+      record.appliedAt = record.appliedAt || new Date().toISOString();
     } else if (job.contactEmail) {
       deliveryLines.push(
         `📧 *Email del aviso:* ${job.contactEmail} (Asunto: *${job.emailSubject || msgs.emailSubject}*)\n   _(${emailAutoResult?.reason || 'Listo para enviar'})_`
@@ -887,7 +932,9 @@ class WhatsAppJobAssistant {
       `💡 *Detalle:* ${analysis.matchReason || 'Perfil compatible'}\n\n` +
       `📬 *REPORTE DE ENVÍO DEL CV:*\n` +
       `${deliveryLines.join('\n\n')}\n\n` +
-      `📄 *Abajo te dejo copia del CV en PDF que se preparó/envió para esta búsqueda:*`;
+      (pdf?.filePath && fs.existsSync(pdf.filePath)
+        ? `📄 *Abajo te dejo copia del CV en PDF que se preparó/envió para esta búsqueda:*`
+        : `⚠️ _El PDF del CV no está disponible para adjuntar._`);
 
     const pdfBuffer = pdf?.filePath && fs.existsSync(pdf.filePath) ? fs.readFileSync(pdf.filePath) : null;
 
@@ -909,6 +956,16 @@ class WhatsAppJobAssistant {
         console.error(`Error enviando alerta WA a ${jid}:`, e.message);
       }
     }
+
+    // Persistir el estado final en el historial (después de saber si se aplicó o no).
+    // Solo se marca como aplicada cuando hubo envío real, para no borrar un estado previo.
+    const historyPatch = {};
+    if (record.pdf) historyPatch.pdf = record.pdf;
+    if (record.applied) {
+      historyPatch.applied = true;
+      historyPatch.appliedAt = record.appliedAt || new Date().toISOString();
+    }
+    if (Object.keys(historyPatch).length) updateHistoryRecord(record.id, historyPatch);
   }
 
   async disconnect() {
@@ -934,5 +991,8 @@ class WhatsAppJobAssistant {
 }
 
 module.exports = {
-  WhatsAppJobAssistant
+  WhatsAppJobAssistant,
+  // Helpers exportados para pruebas / uso desde el panel
+  ensureRecordPdf,
+  updateHistoryRecord
 };

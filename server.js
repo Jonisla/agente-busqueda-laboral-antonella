@@ -11,6 +11,19 @@ const { SEARCH_QUERIES, fetchPortalOffers, fetchOfferDetail } = require('./src/p
 const { WhatsAppJobAssistant } = require('./src/whatsapp-bot');
 const { init: initStore, loadSeenPortalIds, saveSeenPortalIds } = require('./src/supabase-store');
 const { loadSentContacts } = require('./src/auto-applicant');
+const {
+  MIN_REPORT_SCORE,
+  DISCARDED_CONTACT_MIN_HITS,
+  textFingerprint,
+  contactFingerprint,
+  discardContactKey,
+  countDiscardedContacts,
+  fingerprintSeenKey,
+  hasFreshFingerprint,
+  findDuplicateOffer,
+  findDuplicateByContact,
+  findDiscardedContact
+} = require('./src/offer-dedupe');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
@@ -47,15 +60,30 @@ function saveHistory(list) {
  */
 async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 'image/jpeg', source = 'Manual / Canal WA', includePhoto = true }) {
   const profile = loadProfile();
-
-  // Deduplicación: no procesar la misma oferta dos veces
   const existingHistory = loadHistory();
+  const seen = loadSeenPortalIds();
+
+  // Huellas persistentes (Supabase/local): sobreviven al deploy y al tope de 100 registros
+  const textKey = textFingerprint(text);
+  if (hasFreshFingerprint(seen, 'fp:text', textKey)) {
+    console.log('[DEDUP] Aviso ya procesado (misma huella de texto) - se ignora');
+    return null;
+  }
+
+  // Deduplicación por huella del aviso: si es el mismo texto que ya se procesó,
+  // no se vuelve a generar CV ni a notificar al grupo.
+  const duplicate = findDuplicateOffer({ text, history: existingHistory });
+  if (duplicate) {
+    console.log(`[DEDUP] Aviso ya procesado (${duplicate.id}, ${new Date(duplicate.createdAt).toLocaleString('es-AR')}) - se ignora`);
+    return null;
+  }
+
+  // Deduplicación por título detectado (avisos parecidos con texto levemente distinto)
   const titleMatch = text.match(/(?:Puesto|Búsqueda|Buscamos|Vacante)[:\s]*([^\n\r.]+)/i);
   const detectedTitle = titleMatch ? titleMatch[1].trim().toLowerCase().slice(0, 60) : '';
   if (detectedTitle) {
     const isDuplicate = existingHistory.some(h => {
       const existingTitle = (h.analysis?.jobDetails?.title || '').toLowerCase().slice(0, 60);
-      const existingSource = h.source || '';
       // Considerar duplicado si el título es muy similar y fue procesado en las últimas 24 horas
       const timeDiff = Date.now() - new Date(h.createdAt).getTime();
       return existingTitle.includes(detectedTitle.slice(0, 30)) && timeDiff < 24 * 60 * 60 * 1000;
@@ -73,7 +101,35 @@ async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 
     profile
   });
 
-  const jobTitle = analysis?.jobDetails?.title || 'Recepcionista_Administrativa';
+  const jobDetails = analysis?.jobDetails || {};
+  const contactKey = contactFingerprint(jobDetails);
+  const discardKey = discardContactKey(jobDetails);
+
+  // Mismo contacto + mismo puesto ya procesado (aunque el texto venga redactado distinto)
+  if (hasFreshFingerprint(seen, 'fp:contact', contactKey)) {
+    console.log('[DEDUP] Mismo contacto y puesto ya procesados (huella persistida) - se ignora');
+    return null;
+  }
+  const sameContact = findDuplicateByContact({ job: jobDetails, history: existingHistory });
+  if (sameContact) {
+    console.log(`[DEDUP] Mismo contacto y puesto ya procesados (${sameContact.id}) - se ignora`);
+    return null;
+  }
+
+  // Contacto ya revisado y descartado por match bajo: no se vuelve a molestar
+  if (hasFreshFingerprint(seen, 'fp:discard', discardKey)) {
+    console.log('[DEDUP] Contacto ya descartado por match bajo (huella persistida) - se ignora');
+    return null;
+  }
+  const discarded = findDiscardedContact({ job: jobDetails, history: existingHistory, minScore: MIN_REPORT_SCORE });
+  if (discarded) {
+    console.log(
+      `[DEDUP] Contacto ya descartado por match bajo (${discarded.id}, ${discarded.analysis?.matchScore}%) - se ignora`
+    );
+    return null;
+  }
+
+  const jobTitle = jobDetails.title || 'Recepcionista_Administrativa';
   const pdf = await generateTailoredPDF(profile, analysis.tailoredCV, jobTitle, { includePhoto });
 
   const record = {
@@ -81,6 +137,10 @@ async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 
     createdAt: new Date().toISOString(),
     source,
     rawText: text,
+    fingerprint: {
+      text: textKey,
+      contact: contactKey
+    },
     analysis,
     profile,
     pdf: {
@@ -95,6 +155,20 @@ async function processNewOffer({ text = '', imageBuffer = null, imageMimeType = 
   history.unshift(record);
   saveHistory(history);
 
+  // Persistir huellas (Supabase/local) para no volver a avisar del mismo aviso/contacto
+  const textSeenKey = fingerprintSeenKey('fp:text', textKey);
+  const contactSeenKey = fingerprintSeenKey('fp:contact', contactKey);
+  if (textSeenKey) seen.add(textSeenKey);
+  if (contactSeenKey) seen.add(contactSeenKey);
+  if (discardKey && Number(analysis?.matchScore || 0) < MIN_REPORT_SCORE) {
+    const strikes = countDiscardedContacts({ job: jobDetails, history: existingHistory, minScore: MIN_REPORT_SCORE }) + 1;
+    if (strikes >= DISCARDED_CONTACT_MIN_HITS) {
+      seen.add(fingerprintSeenKey('fp:discard', discardKey));
+      console.log(`[DEDUP] Contacto ${discardKey} bloqueado: ${strikes} avisos con match bajo`);
+    }
+  }
+  saveSeenPortalIds(seen);
+
   return record;
 }
 
@@ -107,7 +181,7 @@ const waAssistant = new WhatsAppJobAssistant({
 });
 
 // Estadísticas del radar que se muestran con "@verificar" en el grupo
-const radarStats = { lastRun: null, lastNewOffers: 0, lastSent: 0, cycles: 0 };
+const radarStats = { lastRun: null, lastNewOffers: 0, lastSent: 0, lastSkipped: 0, cycles: 0 };
 
 waAssistant.getRuntimeStats = () => {
   let contacts = { emails: {}, phones: {} };
@@ -124,6 +198,7 @@ waAssistant.getRuntimeStats = () => {
     radarLastRun: radarStats.lastRun,
     radarNewOffers: radarStats.lastNewOffers,
     radarLastSent: radarStats.lastSent,
+    radarSkipped: radarStats.lastSkipped,
     radarCycles: radarStats.cycles,
     seenOffers: loadSeenPortalIds().size,
     processedOffers: history.length,
@@ -144,6 +219,8 @@ app.get('/api/status', (req, res) => {
       ? process.env.GEMINI_API_KEY.slice(0, 6) + '...' + process.env.GEMINI_API_KEY.slice(-4)
       : '',
     hasGmailConfig: Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
+    hasBrevoKey: Boolean(process.env.BREVO_API_KEY),
+    commit: (process.env.RENDER_GIT_COMMIT || '').slice(0, 7),
     gmailUser: process.env.GMAIL_USER || '',
     profile,
     whatsapp: waAssistant.getState(),
@@ -416,8 +493,12 @@ function normalizeOfferPart(value) {
 }
 
 function offerDedupKey(of) {
-  return `key:${normalizeOfferPart(of.title)}|${normalizeOfferPart(of.company)}`;
+  return `key:${normalizeOfferPart(of.title)}|${normalizeOfferPart(of.company)}|${normalizeOfferPart(of.location)}`;
 }
+
+// El radar solo avisa al grupo ofertas con buen match; el resto se descarta en silencio
+// (processNewOffer ya deduplica avisos y contactos repetidos).
+const MIN_RADAR_SCORE = Number(process.env.MIN_RADAR_SCORE || 70);
 
 async function runAutomaticRadarCycle() {
   if (waAssistant.status !== 'connected') return;
@@ -426,6 +507,7 @@ async function runAutomaticRadarCycle() {
     const offers = await fetchPortalOffers('all');
     let sentCount = 0;
     let newOffers = 0;
+    let skipped = 0;
 
     for (const of of offers) {
       const dedupKey = offerDedupKey(of);
@@ -436,22 +518,32 @@ async function runAutomaticRadarCycle() {
       saveSeenPortalIds(seen);
 
       // Procesamos hasta 2 ofertas nuevas por ciclo para no saturar WhatsApp
-      if (sentCount < 2) {
-        const fullDetail = of.url ? await fetchOfferDetail(of.url) : '';
-        const combinedText = `Puesto: ${of.title}\nEmpresa: ${of.company}\nUbicación: ${of.location}\nDescripción: ${of.snippet}\n${fullDetail}`;
-        const record = await processNewOffer({
-          text: combinedText,
-          source: `Radar Automático (${of.location || 'BA'})`,
-          includePhoto: true
-        });
-        if (!record) continue;
-        if (of.url && !record.analysis.jobDetails.applyUrl) {
-          record.analysis.jobDetails.applyUrl = of.url;
-        }
-        if (record.analysis?.matchScore >= 70) {
-          await waAssistant.sendReadyApplicationToUser(record);
-          sentCount++;
-        }
+      if (sentCount >= 2) continue;
+
+      const fullDetail = of.url ? await fetchOfferDetail(of.url) : '';
+      const combinedText = `Puesto: ${of.title}\nEmpresa: ${of.company}\nUbicación: ${of.location}\nDescripción: ${of.snippet}\n${fullDetail}`;
+      const record = await processNewOffer({
+        text: combinedText,
+        source: `Radar Automático (${of.location || 'BA'})`,
+        includePhoto: true
+      });
+
+      // null = aviso duplicado o contacto ya descartado: no se avisa nada
+      if (!record) {
+        skipped++;
+        continue;
+      }
+      if (of.url && !record.analysis.jobDetails.applyUrl) {
+        record.analysis.jobDetails.applyUrl = of.url;
+      }
+
+      const score = Number(record.analysis?.matchScore || 0);
+      if (score >= MIN_RADAR_SCORE) {
+        await waAssistant.sendReadyApplicationToUser(record);
+        sentCount++;
+      } else {
+        skipped++;
+        console.log(`[RADAR] Descartada sin notificar (match ${score}% < ${MIN_RADAR_SCORE}%): ${of.title}`);
       }
     }
     saveSeenPortalIds(seen);
@@ -459,7 +551,11 @@ async function runAutomaticRadarCycle() {
     radarStats.lastRun = Date.now();
     radarStats.lastNewOffers = newOffers;
     radarStats.lastSent = sentCount;
+    radarStats.lastSkipped = skipped;
     radarStats.cycles++;
+    if (skipped > 0) {
+      console.log(`[RADAR] Ciclo #${radarStats.cycles}: ${newOffers} nuevas, ${sentCount} notificadas, ${skipped} descartadas`);
+    }
   } catch (err) {
     console.error('Error en ciclo de Radar Automático:', err.message);
   }

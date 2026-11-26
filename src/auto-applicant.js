@@ -85,6 +85,16 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
   }
 
   try {
+    const wantsAttachment = Boolean(pdfFileName);
+    const hasAttachment = Boolean(pdfPath && fs.existsSync(pdfPath));
+
+    // Nunca mandar un mail que dice "Adjunto mi CV" sin el CV: si falta el PDF,
+    // se aborta el envío y se avisa en el reporte para mandarlo a mano.
+    if (wantsAttachment && !hasAttachment) {
+      console.warn(`[EMAIL] ${cleanEmail}: envío omitido, falta el PDF del CV (${pdfPath || 'sin ruta'})`);
+      return { sent: false, reason: 'Falta el PDF del CV para adjuntar' };
+    }
+
     const payload = {
       sender: { name: SENDER_NAME, email: SENDER_EMAIL },
       replyTo: { email: SENDER_EMAIL },
@@ -93,7 +103,7 @@ async function sendEmailApplication({ toEmail, subject, bodyText, pdfPath, pdfFi
       textContent: bodyText
     };
 
-    if (pdfPath && fs.existsSync(pdfPath)) {
+    if (hasAttachment) {
       payload.attachment = [{
         name: pdfFileName || 'CV_Antonella_Solange_Fernandez.pdf',
         content: fs.readFileSync(pdfPath).toString('base64')
