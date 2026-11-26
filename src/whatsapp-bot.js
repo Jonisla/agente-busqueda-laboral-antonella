@@ -284,8 +284,10 @@ class WhatsAppJobAssistant {
       '📊 *Resumen:*',
       `• Ofertas encontradas: *${stats.seenOffers ?? 0}*`,
       `• CVs preparados: *${stats.processedOffers ?? 0}*`,
-      `• CVs enviados a reclutadores: *${stats.appliedOffers ?? 0}*`,
-      `• Mails enviados: *${stats.emailsSent ?? 0}* · WhatsApp enviados: *${stats.phonesSent ?? 0}*`,
+      `• Postulaciones realizadas: *${stats.appliedOffers ?? 0}*`,
+      `• Reclutadores contactados: *${stats.emailsSent ?? 0}* por mail · *${stats.phonesSent ?? 0}* por WhatsApp`,
+      '',
+      '_Los reclutadores contactados son el total acumulado; puede ser mayor que las postulaciones si un mismo reclutador recibió el CV por los dos canales._',
       '',
       '_Escribí "@verificar" cuando quieras volver a chequear._'
     ];

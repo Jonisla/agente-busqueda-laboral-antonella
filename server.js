@@ -56,6 +56,37 @@ function saveHistory(list) {
 }
 
 /**
+ * Reconstruye el flag "applied" del historial usando los contactos ya enviados
+ * (Supabase/local). Así los reportes y el panel reflejan la realidad histórica.
+ */
+function backfillAppliedFromContacts() {
+  try {
+    const contacts = loadSentContacts();
+    const history = loadHistory();
+    let changed = 0;
+    for (const record of history) {
+      if (record.applied) continue;
+      const job = record.analysis?.jobDetails || {};
+      const email = String(job.contactEmail || '').trim().toLowerCase();
+      const phone = String(job.contactPhone || '').replace(/\D/g, '');
+      const sentByEmail = email && contacts.emails && contacts.emails[email];
+      const sentByPhone = phone && contacts.phones && contacts.phones[phone];
+      if (sentByEmail || sentByPhone) {
+        record.applied = true;
+        record.appliedAt = (sentByEmail && sentByEmail.sentAt) || (sentByPhone && sentByPhone.sentAt) || new Date().toISOString();
+        changed++;
+      }
+    }
+    if (changed) {
+      saveHistory(history);
+      console.log(`[HISTORY] Backfill applied: ${changed} registro(s) marcados como enviados`);
+    }
+  } catch (e) {
+    console.error('[HISTORY] Error en backfill applied:', e.message);
+  }
+}
+
+/**
  * Procesa una oferta (desde el panel web, desde un canal/grupo de WhatsApp o desde portales),
  * adapta el CV de Antonella, genera el PDF y la guarda en el historial.
  */
@@ -599,6 +630,7 @@ if (HEARTBEAT_HOURS > 0) {
 
 app.listen(PORT, async () => {
   await initStore();
+  backfillAppliedFromContacts();
   console.log(`\n========================================================`);
   console.log(`🚀 Agente de Búsqueda Laboral (Antonella) corriendo en:`);
   console.log(`👉 http://localhost:${PORT}`);
